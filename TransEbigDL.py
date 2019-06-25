@@ -41,6 +41,9 @@ class TransE:
         self.training_triple_pool = set(triplets_list)
         self.batch_pos = []
         self.batch_neg = []
+        self.distance_pos = []
+        self.distance_neg = []
+        # self.build_graph()
 
 
     def initialize(self):
@@ -99,6 +102,38 @@ class TransE:
     def sample(self, size):
         return sample(self.triplets_list, size)
 
+    def build_graph(self):
+            self.infer(self.batch_pos, self.batch_neg)
+            self.loss = self.calculate_loss(self.distance_pos, self.distance_neg, self.margin)
+            # tf.summary.scalar(name=self.loss.op.name, tensor=self.loss)
+            # optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+            # self.train_op = optimizer.minimize(self.loss, global_step=self.global_step)
+            # self.merge = tf.summary.merge_all()
+
+    def infer(self, triple_pos, triple_neg):
+        for i, j in zip(triple_pos, triple_neg):
+
+            head_pos = self.entity_vector_dict.get(i[0])
+            tail_pos = self.entity_vector_dict.get(i[1])
+            relation_pos = self.entity_vector_dict.get(i[2])
+            head_neg = self.entity_vector_dict.get(j[0])
+            tail_neg = self.entity_vector_dict.get(j[1])
+            relation_neg = self.entity_vector_dict.get(j[2])
+            distance_pos = head_pos + relation_pos - tail_pos
+            distance_neg = head_neg + relation_neg - tail_neg
+
+            self.distance_pos.append(distance_pos)
+            self.distance_neg.append(distance_neg)
+
+
+    def calculate_loss(self, distance_pos, distance_neg, margin):
+        # score_pos = tf.reduce_sum(tf.abs(distance_pos), axis=1)
+        # score_neg = tf.reduce_sum(tf.abs(distance_neg), axis=1)
+        score_pos = np.sum(np.fabs(self.distance_pos), axis=1)
+        score_neg = np.sum(np.fabs(self.distance_pos), axis=1)
+
+        # loss = tf.reduce_sum(tf.nn.relu(margin + score_pos - score_neg), name='max_margin_loss')
+        # return loss
 
 
 if __name__ == "__main__":
@@ -117,4 +152,5 @@ if __name__ == "__main__":
     print("\nTransE is initializing...")
     transE.initialize()
     transE.transE(20)
+    transE.build_graph()
     print("Hello")
