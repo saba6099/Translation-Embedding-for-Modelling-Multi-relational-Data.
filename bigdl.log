@@ -975,3 +975,6 @@ Exception: Python in worker has different version 2.7 than that in driver 3.6, P
 2019-06-29 17:17:14 WARN  SparkContext:66 - Using an existing SparkContext; some configuration may not take effect.
 2019-06-29 17:18:52 WARN  SparkContext:66 - Using an existing SparkContext; some configuration may not take effect.
 2019-06-29 17:19:26 WARN  SparkContext:66 - Using an existing SparkContext; some configuration may not take effect.
+2019-06-29 19:21:28 WARN  SparkContext:66 - Using an existing SparkContext; some configuration may not take effect.
+2019-06-29 19:22:20 WARN  SparkContext:66 - Using an existing SparkContext; some configuration may not take effect.
+2019-06-29 19:22:28 WARN  TaskSetManager:66 - Stage 0 contains a task of very large size (13848 KB). The maximum recommended task size is 100 KB.
