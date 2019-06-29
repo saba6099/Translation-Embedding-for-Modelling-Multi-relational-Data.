@@ -12,6 +12,8 @@ import time
 import random
 from random import sample
 from pyspark import SparkContext, SparkConf
+from bigdl.nn.keras.topology import Sequential
+from bigdl.nn.keras.layer import Embedding
 init_engine()
 
 
@@ -19,34 +21,49 @@ init_engine()
 
 
 class TransE:
-    def __init__(self, entity_list, rels_list, triplets_list, margin=1, learning_rate=0.01, dim=50, normal_form="L1"):
+    def __init__(self, entity_dict, rels_dict, triplets_list, margin=1, learning_rate=0.01, dim=50, normal_form="L1"):
         self.learning_rate = learning_rate
         self.loss = 0
-        self.entity_list = entity_list
-        self.rels_list = rels_list
+        self.entity_dict = entity_dict
+        self.rels_dict = rels_dict
         self.triplets_list = triplets_list
         self.margin = margin
         self.dim = dim
         self.normal_form = normal_form
         self.entity_vector_dict = {}
-        self.rels_vector_dict = {}
+        self.relation_vector_dict = {}
         self.loss_list = []
         self.training_triple_pool = set(triplets_list)
         self.batch_pos = []
         self.batch_neg = []
         self.distance_pos = []
         self.distance_neg = []
+        self.entity_embeddings = []
+        self.relation_embeddings = []
+        self.embeddings = np.empty((12,2))
+        self.entity = []
+        self.relation = []
+        self.triple_embeddings = []
 
     def sample(self, size):
         return sample(self.triplets_list, size)
 
     def makeRDD(self, sc):
-        data = (np.concatenate((self.batch_pos, self.batch_neg), axis = 1))
-        print(data)
-        train_rdd = sc.parallelize(data)
+        #
+        # data = (np.concatenate((self.batch_pos, self.batch_neg), axis = 1))
+        # print(data)
+        train_rdd = sc.parallelize(self.triple_embeddings)
         print(train_rdd.collect())
+        all_heads = train_rdd.map(lambda x: (x[0]))
+        print(all_heads.collect())
+        print("hello")
+        #layer = LookupTable(9, 4, 2.0, 0.1, 2.0, True)
+        #input = (np.array[train_rdd.collect()]).astype("float32")
 
-
+        #output = layer.forward(input)
+        #gradInput = layer.backward(input, output)
+        #print(output)
+        #print(gradInput)
     def transE(self, cycle_index=20):
         count = 0
         print("\n********** Start TransE training **********")
@@ -71,9 +88,9 @@ class TransE:
                     tail_neg = tail
                     while True:
                         if corrupt_head_prob:
-                            head_neg = random.choice(list(self.entity_list.values()))
+                            head_neg = random.choice(list(self.entity_dict.values()))
                         else:
-                            tail_neg = random.choice(list(self.entity_list.values()))
+                            tail_neg = random.choice(list(self.entity_dict.values()))
                         if (head_neg, tail_neg, relation) not in (self.training_triple_pool and self.batch_neg):
                             break
                     batch_neg.append((head_neg, tail_neg, relation))
@@ -81,6 +98,34 @@ class TransE:
             self.batch_pos += batch_pos
         print((self.batch_pos))
         print((self.batch_neg))
+
+    def create_embeddings(self):
+        self.entity  = list(self.entity_dict.values())
+        self.relation = (list(self.rels_dict.values()))
+
+        model = Sequential()
+        len = 8
+        model.add(Embedding(len, 2, input_shape=(8,)))
+        self.entity_embeddings = model.forward(np.array(list(self.entity)))
+        print(self.entity_embeddings)
+        # for i in range((self.entity_embeddings).shape[0]):
+        #     self.entity_vector_dict[i] = self.entity_embeddings[i]
+
+        model = Sequential()
+        len = 4
+        model.add(Embedding(len, 2, input_shape=(4,)))
+        self.relation_embeddings = model.forward(np.array(list(self.relation)))
+        print(self.relation_embeddings)
+        # for i in range((self.relation_embeddings).shape[0]):
+        #     self.relation_vector_dict[i] = self.relation_embeddings[i]
+
+
+        module = ParallelTable()
+        module.add(Sum(2))
+        module.add(Sum(2))
+        output = module.forward([self.entity_embeddings, self.relation_embeddings])
+        print(output)
+
 
     def createrdd(self,sc):
         #sc = SparkContext('spark://Heena:7077')
@@ -91,14 +136,33 @@ class TransE:
         #b=['{} {}'.format(*i) for i in zip(np.array(self.batch_pos),np.array(self.batch_neg))]
         #print(b)
 
-        train = list(map(lambda x, y: (x,y), np.array(self.batch_pos),np.array(self.batch_neg)))
-        print(train)
+        # train = list(map(lambda x, y: (x,y), np.array(self.batch_pos),np.array(self.batch_neg)))
+        # print(train)
         #train_rdd = sc.parallelize(train)
         #print(train_rdd.take(3))
 
         #
         # print(3))
         # #sc.stop()
+
+        for i, j in zip(self.batch_pos, self.batch_neg):
+
+            head_pos = self.entity_vector_dict.get(i[0])
+            tail_pos = self.entity_vector_dict.get(i[1])
+            relation_pos = self.relation_vector_dict.get(i[2])
+            head_neg = self.entity_vector_dict.get(j[0])
+            tail_neg = self.entity_vector_dict.get(j[1])
+            relation_neg = self.relation_vector_dict.get(j[2])
+
+            # a  = np.array([head_pos, tail_pos, relation_pos, head_neg, tail_neg, relation_neg])
+            # self.batch_pos =  np.append([], [a], axis = 0)
+
+            embed = [head_pos, tail_pos, relation_pos, head_neg, tail_neg, relation_neg]
+            self.triple_embeddings.append(embed)
+
+
+        print("Hello")
+
 
 
 
@@ -107,18 +171,20 @@ class TransE:
 if __name__ == "__main__":
     conf=SparkConf().setAppName('test').setMaster('spark://saba-Aspire-VN7-591G:7077')
     sc = SparkContext.getOrCreate(conf)
-    entity2id = pd.read_table("/home/saba/Documents/TransE/dummydata/entity2id.txt", header=None)
+    entity2id = pd.read_table("/home/saba/Documents/Big Data Lab/dummydata/entity2id.txt", header=None)
     dict_entities = dict(zip(entity2id[0], entity2id[1]))
     print(len(entity2id))
-    relation_df = pd.read_table("/home/saba/Documents/TransE/dummydata/relation2id.txt", header=None)
+    relation_df = pd.read_table("/home/saba/Documents/Big Data Lab/dummydata/relation2id.txt", header=None)
     dict_relations = dict(zip(relation_df[0], relation_df[1]))
     print(len(relation_df))
-    training_df = pd.read_table("/home/saba/Documents/TransE/dummydata/train.txt", header=None)
+    training_df = pd.read_table("/home/saba/Documents/Big Data Lab/dummydata/train.txt", header=None)
     training_triples = list(zip([dict_entities[h] for h in training_df[0]],
                                  [dict_entities[t] for t in training_df[1]],
                                   [dict_relations[r] for r in training_df[2]]))
 
     transE = TransE(dict_entities, dict_relations, training_triples, margin=1, dim=50)
     transE.transE(1)
+    transE.create_embeddings()
+    transE.createrdd(sc)
     transE.makeRDD(sc)
     sc.stop()
