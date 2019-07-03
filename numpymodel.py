@@ -83,12 +83,7 @@ sample = np.array([[[[ 1],
          [ 48]]]])
 
 
-sample2 = np.array([[[[ 1],
-         [ 2],
-         [ 3 ]],
-        [[ 4],
-         [ 5],
-         [ 6]]]])
+
 # sample=np.array([[1,2,3,1,2,4],[2,3,4,6,3,4],[4,5,6,4,5,1],[5,6,7,2,6,7]])
 # sample=[[[ 1 , 2 ]
 #   [ 2. , 1.]
@@ -106,40 +101,115 @@ sample2 = np.array([[[[ 1],
 # a=np.ones((2,6,2))
 #print(a)
 
-train_data = JTensor.from_ndarray(sample2)
 
-# sample_rdd = sc.parallelize(sample)
-# labels = np.ones(8)
-# # labels=np.array([[1],[1],[1],[1]])
-# labels = sc.parallelize(labels)
-# record = sample_rdd.zip(labels)
-# train_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
+sample_rdd = sc.parallelize(sample)
+labels = np.ones(8)
+# labels=np.array([[1],[1],[1],[1]])
+labels = sc.parallelize(labels)
+record = sample_rdd.zip(labels)
+train_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
 
 # print(train_data.collect())
 
 
+
+
+# #### JTensor
+# sample = np.array([[[[ 1],
+#          [ 2],
+#          [ 3 ]],
+#         [[ 4],
+#          [ 5],
+#          [ 6]]]])
+# train_data = JTensor.from_ndarray(sample)
 model =Sequential()
 model.add(Reshape([6]))
-embedding = LookupTable(49,5)
+embedding = LookupTable(49,2)
 model.add(embedding)
-model.add(Reshape([2,3,5]))
-# Splitting the Input and putting in parralel branches for true and corrupted inputs
-model.add(SplitTable(2))
-# branches = ParallelTable()
-# #branch 1 works with true inputs
-# branch1 = Sequential()
-# #performs addition of heads and relations
-# pos_h_l = Sequential().add(ConcatTable().add(Select(2,1)).add(Select(2,3)))
-# model.add(pos_h_l)
-# pos_add= pos_h_l.add(CAddTable())
-# #performs negation of tails
+model.add(Reshape([2,3,1,2])).add(Squeeze(1))
+# print(model.forward((train_data)))
+model.add(SplitTable(1))
+
+branches = ParallelTable()
+branch1 = Sequential()
+pos_h_l = Sequential().add(ConcatTable().add(Select(1,1)).add(Select(1,3)))
+pos_add= pos_h_l.add(CAddTable())
+pos_t= Sequential().add(Select(1,2)).add(MulConstant(-1.0))
+triplepos_meta = Sequential().add(ConcatTable().add(pos_add).add(pos_t))
+triplepos_dist = triplepos_meta.add(CAddTable()).add(Abs())
+triplepos_score = triplepos_dist.add(Unsqueeze(1)).add(Mean(3,1)).add(MulConstant(2.0))
+branch1.add(triplepos_score)
 # pos_t= Sequential().add(Select(1,2)).add(MulConstant(-1.0))
-# #calculates distance between them
+# a = Sequential().add(Narrow(1,1,2)).add(SplitTable(2))
+# c = Sequential().add(CAveTable())
+# b = Sequential().add(Select(1,2))
+
+# branch1 = Sequential().add(CAveTable()).add(MulConstant(1.0))
+# branch1 = Sequential().add(c)
+
+branch2 = Sequential()
+neg_h_l = Sequential().add(ConcatTable().add(Select(1,1)).add(Select(1,3)))
+neg_add= neg_h_l.add(CAddTable())
+neg_t= Sequential().add(Select(1,2)).add(MulConstant(-1.0))
+tripleneg_meta= Sequential().add(ConcatTable().add(neg_add).add(neg_t))
+tripleneg_dist = tripleneg_meta.add(CAddTable()).add(Abs())
+tripleneg_score = tripleneg_dist.add(Unsqueeze(1)).add(Mean(3,1)).add(MulConstant(2.0))
+branch2.add(tripleneg_score)
+# pos_add= branch1.add(CAddTable())
+# branch2 = Sequential().add(Narrow(1, 2))
+
+
+# pos_h_l = Sequential().add(ConcatTable().add(Select(2,1)).add(Select(2,3)))
+# pos_add= pos_h_l.add(CAddTable())
+# branch1.add(pos_add)
+
+#
+# branch2 = Sequential().add(Select(2,2))
+branches.add(branch1).add(branch2)
+model.add(branches)
+# model.add(CAveTable())
+
+# model.add(a)
+
+# output = model.forward(train_data)
+# print(output)
+#
+
+
+
+#### Numpy
+# sample = np.random.rand(2,3,5)
+# sample=np.array([[[ 20,  21,  23, 24, 25],
+#                     [ 3,  4,  5, 6, 7],
+#                     [ 6,  7,  8, 18, 19]],
+#
+#                     [[ 9, 10, 11,20, 21],
+#                     [12, 13, 14, 22, 23],
+#                     [15, 16, 17, 24, 25]]])
+# model = Sequential()
+# model.add(SplitTable(1))
+# # model.add(Select(2,2))
+# branches = ParallelTable()
+# branch1 = Sequential().add(Narrow(1, 2)).add(Narrow(1,1)).add(Squeeze(1)).add(Squeeze(1)).add(Squeeze(1))
+# branch2 = Sequential().add(Narrow(1, 1)).add(Narrow(1,1)).add(Squeeze(1)).add(Squeeze(1)).add(Squeeze(1))
+# branches.add(branch1).add(branch2)
+# model.add(branches)
+#
+# output = model.forward(sample)
+# print(output)
+
+
+
+
+##### MODEL
+# branch1 = Sequential()
+# pos_h_l = Sequential().add(ConcatTable().add(Select(1,1)).add(Select(1,3)))
+# pos_add= pos_h_l.add(CAddTable())
+# pos_t= Sequential().add(Select(1,2)).add(MulConstant(-1.0))
 # triplepos_meta = Sequential().add(ConcatTable().add(pos_add).add(pos_t))
 # triplepos_dist = triplepos_meta.add(CAddTable()).add(Abs())
 # triplepos_score = triplepos_dist.add(Unsqueeze(1)).add(Mean(3,1)).add(MulConstant(3.0))
 # branch1.add(triplepos_score)
-# # Further branch2 operations are similar
 #
 # branch2 = Sequential()
 # neg_h_l = Sequential().add(ConcatTable().add(Select(1,1)).add(Select(1,3)))
@@ -151,54 +221,17 @@ model.add(SplitTable(2))
 # branch2.add(tripleneg_score)
 # branches.add(branch1).add(branch2)
 # model.add(branches)
-# output = model.forward(sample)
-# print(output)
-# model.add(Reshape([2,2,3]))
-# model.add(SplitTable(2))
-# model.add(SelectTable(1)).add(Reshape([2,3,2]))
-# branches=ParallelTable()
-# branch1=SelectTable(1)
-#
-# branches = ParallelTable()
-# branch1=Sequential().add(SelectTable(1))
-# branch2=Sequential().add(SelectTable(2))
-# branches.add(branch1).add(branch2)
-# model.add(branches)
-
-
-output = model.forward(train_data)
-print(output)
-#model.add(reshape[])
-
-
-
-
-# model.add(Reshape([2, 6]))
 
 
 #
-# model = Sequential()
-# model.add(Reshape([1, 2, 3]))
-# # model.add(SpatialConvolution(1, 6, 5, 5))
-# model.add(Tanh())
-# # model.add(SpatialMaxPooling(2, 2, 2, 2))
-# # model.add(SpatialConvolution(6, 12, 5, 5))
-# model.add(Tanh())
-# # model.add(SpatialMaxPooling(2, 2, 2, 2))
-# # model.add(Reshape([12 * 4 * 4]))
-# # model.add(Linear(12 * 4 * 4, 100))
-# model.add(Tanh())
-# # model.add(Linear(100, 1))
-# model.add(LogSoftMax())
-#
-# optimizer = Optimizer(
-#     model=model,
-#     training_rdd=train_data,
-#     criterion=AbsCriterion(),
-#     optim_method=SGD(learningrate=0.01,learningrate_decay=0.0002),
-#     end_trigger=MaxEpoch(2),
-#     batch_size=4)
-# optimizer.optimize()
+optimizer = Optimizer(
+    model=model,
+    training_rdd=train_data,
+    criterion=MarginRankingCriterion(),
+    optim_method=SGD(learningrate=0.01,learningrate_decay=0.0002),
+    end_trigger=MaxEpoch(2),
+    batch_size=4)
+optimizer.optimize()
 
 #
 #
