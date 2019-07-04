@@ -103,7 +103,7 @@ sample = np.array([[[[ 1],
 
 
 sample_rdd = sc.parallelize(sample)
-labels = np.ones(8)
+labels = np.zeros(8)
 # labels=np.array([[1],[1],[1],[1]])
 labels = sc.parallelize(labels)
 record = sample_rdd.zip(labels)
@@ -138,7 +138,7 @@ pos_t= Sequential().add(Select(1,2)).add(MulConstant(-1.0))
 triplepos_meta = Sequential().add(ConcatTable().add(pos_add).add(pos_t))
 triplepos_dist = triplepos_meta.add(CAddTable()).add(Abs())
 triplepos_score = triplepos_dist.add(Unsqueeze(1)).add(Mean(3,1)).add(MulConstant(2.0))
-branch1.add(triplepos_score)
+branch1.add(triplepos_score)#.add(AddConstant(1.0))#.add(Unsqueeze(1))
 # pos_t= Sequential().add(Select(1,2)).add(MulConstant(-1.0))
 # a = Sequential().add(Narrow(1,1,2)).add(SplitTable(2))
 # c = Sequential().add(CAveTable())
@@ -154,7 +154,7 @@ neg_t= Sequential().add(Select(1,2)).add(MulConstant(-1.0))
 tripleneg_meta= Sequential().add(ConcatTable().add(neg_add).add(neg_t))
 tripleneg_dist = tripleneg_meta.add(CAddTable()).add(Abs())
 tripleneg_score = tripleneg_dist.add(Unsqueeze(1)).add(Mean(3,1)).add(MulConstant(2.0))
-branch2.add(tripleneg_score)
+branch2.add(tripleneg_score)#.add(Unsqueeze(1))
 # pos_add= branch1.add(CAddTable())
 # branch2 = Sequential().add(Narrow(1, 2))
 
@@ -168,9 +168,11 @@ branch2.add(tripleneg_score)
 branches.add(branch1).add(branch2)
 model.add(branches)
 # model.add(CAveTable())
-
+# print(model.forward(train_data))
 # model.add(a)
+pos_plus_margin=Sequential().add(SelectTable(1)).add(AddConstant(1.0))
 
+model.add(ConcatTable().add(pos_plus_margin).add(SelectTable(2))).add(CSubTable()).add(Abs())
 # output = model.forward(train_data)
 # print(output)
 #
@@ -227,9 +229,9 @@ model.add(branches)
 optimizer = Optimizer(
     model=model,
     training_rdd=train_data,
-    criterion=MarginRankingCriterion(),
+    criterion=AbsCriterion(False),
     optim_method=SGD(learningrate=0.01,learningrate_decay=0.0002),
-    end_trigger=MaxEpoch(2),
+    end_trigger=MaxEpoch(4),
     batch_size=4)
 optimizer.optimize()
 
@@ -403,3 +405,21 @@ optimizer.optimize()
 # #
 # # print(output)
 #######
+
+
+#######
+# from bigdl.nn.layer import *
+# from bigdl.nn.criterion import *
+# from bigdl.optim.optimizer import *
+# from bigdl.util.common import *
+# mse = MarginRankingCriterion(margin=1.0, size_average=False)
+# input1 = np.array([3, 7, 2, 18, 311]).astype("float32")
+# input2 = np.array([4, 9, 1, 9, 3124]).astype("float32")
+# input = [input1, input2]
+# target1 = np.array([1, 1, 1, 1, 1]).astype("float32")
+# target = [target1, target1]
+# output = mse.forward(input, target)
+# creating: createMarginRankingCriterion
+# output
+# 2819.0
+#####

@@ -21201,3 +21201,125 @@ Caused by: java.lang.ClassCastException: com.intel.analytics.bigdl.tensor.DenseT
 	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
 	... 3 more
 
+2019-07-04 16:41:28 INFO  DistriOptimizer$:784 - caching training rdd ...
+2019-07-04 16:41:29 INFO  DistriOptimizer$:624 - Cache thread models...
+2019-07-04 16:41:29 INFO  DistriOptimizer$:606 - model thread pool size is 1
+2019-07-04 16:41:29 WARN  BlockManager:66 - Asked to remove block test_0weights0, which does not exist
+2019-07-04 16:41:29 WARN  BlockManager:66 - Asked to remove block test_0gradients0, which does not exist
+2019-07-04 16:41:29 INFO  DistriOptimizer$:626 - Cache thread models... done
+2019-07-04 16:41:29 INFO  DistriOptimizer$:154 - Count dataset
+2019-07-04 16:41:29 INFO  DistriOptimizer$:158 - Count dataset complete. Time elapsed: 0.033056486s
+2019-07-04 16:41:29 INFO  DistriOptimizer$:166 - config  {
+	computeThresholdbatchSize: 100
+	maxDropPercentage: 0.0
+	warmupIterationNum: 200
+	isLayerwiseScaled: false
+	dropPercentage: 0.0
+ }
+2019-07-04 16:41:29 INFO  DistriOptimizer$:170 - Shuffle data
+2019-07-04 16:41:29 INFO  DistriOptimizer$:173 - Shuffle data complete. Takes 0.019200877s
+2019-07-04 16:41:29 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:41:29 INFO  DistriOptimizer$:408 - [Epoch 1 4/8][Iteration 1][Wall Clock 0.167477094s] Trained 4 records in 0.167477094 seconds. Throughput is 23.883862 records/second. Loss is 1.467392. Sequential304c1945's hyper parameters: Current learning rate is 0.01. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:41:30 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:41:30 INFO  DistriOptimizer$:408 - [Epoch 1 8/8][Iteration 2][Wall Clock 0.242886011s] Trained 4 records in 0.075408917 seconds. Throughput is 53.04412 records/second. Loss is 2.3499298. Sequential304c1945's hyper parameters: Current learning rate is 0.009998000399920017. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:41:30 INFO  DistriOptimizer$:452 - [Epoch 1 8/8][Iteration 2][Wall Clock 0.242886011s] Epoch finished. Wall clock time is 256.611758 ms
+2019-07-04 16:41:30 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:41:30 INFO  DistriOptimizer$:408 - [Epoch 2 4/8][Iteration 3][Wall Clock 0.326661325s] Trained 4 records in 0.070049567 seconds. Throughput is 57.10242 records/second. Loss is 2.5032578. Sequential304c1945's hyper parameters: Current learning rate is 0.009996001599360257. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:41:30 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:41:30 INFO  DistriOptimizer$:408 - [Epoch 2 8/8][Iteration 4][Wall Clock 0.393142286s] Trained 4 records in 0.066480961 seconds. Throughput is 60.1676 records/second. Loss is 2.1645126. Sequential304c1945's hyper parameters: Current learning rate is 0.009994003597841297. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:41:30 INFO  DistriOptimizer$:452 - [Epoch 2 8/8][Iteration 4][Wall Clock 0.393142286s] Epoch finished. Wall clock time is 402.810109 ms
+2019-07-04 16:42:20 INFO  DistriOptimizer$:784 - caching training rdd ...
+2019-07-04 16:42:20 INFO  DistriOptimizer$:624 - Cache thread models...
+2019-07-04 16:42:20 INFO  DistriOptimizer$:606 - model thread pool size is 1
+2019-07-04 16:42:20 WARN  BlockManager:66 - Asked to remove block test_0weights0, which does not exist
+2019-07-04 16:42:20 WARN  BlockManager:66 - Asked to remove block test_0gradients0, which does not exist
+2019-07-04 16:42:20 INFO  DistriOptimizer$:626 - Cache thread models... done
+2019-07-04 16:42:20 INFO  DistriOptimizer$:154 - Count dataset
+2019-07-04 16:42:21 INFO  DistriOptimizer$:158 - Count dataset complete. Time elapsed: 0.037682348s
+2019-07-04 16:42:21 INFO  DistriOptimizer$:166 - config  {
+	computeThresholdbatchSize: 100
+	maxDropPercentage: 0.0
+	warmupIterationNum: 200
+	isLayerwiseScaled: false
+	dropPercentage: 0.0
+ }
+2019-07-04 16:42:21 INFO  DistriOptimizer$:170 - Shuffle data
+2019-07-04 16:42:21 INFO  DistriOptimizer$:173 - Shuffle data complete. Takes 0.016594572s
+2019-07-04 16:42:21 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:42:21 INFO  DistriOptimizer$:408 - [Epoch 1 4/8][Iteration 1][Wall Clock 0.142946729s] Trained 4 records in 0.142946729 seconds. Throughput is 27.98245 records/second. Loss is 1.9930115. Sequential7f6e88b4's hyper parameters: Current learning rate is 0.01. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:42:21 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:42:21 INFO  DistriOptimizer$:408 - [Epoch 1 8/8][Iteration 2][Wall Clock 0.22118925s] Trained 4 records in 0.078242521 seconds. Throughput is 51.1231 records/second. Loss is 1.9598389. Sequential7f6e88b4's hyper parameters: Current learning rate is 0.009998000399920017. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:42:21 INFO  DistriOptimizer$:452 - [Epoch 1 8/8][Iteration 2][Wall Clock 0.22118925s] Epoch finished. Wall clock time is 232.921338 ms
+2019-07-04 16:42:21 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:42:21 INFO  DistriOptimizer$:408 - [Epoch 2 4/8][Iteration 3][Wall Clock 0.299172867s] Trained 4 records in 0.066251529 seconds. Throughput is 60.37596 records/second. Loss is 2.3746414. Sequential7f6e88b4's hyper parameters: Current learning rate is 0.009996001599360257. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:42:21 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:42:21 INFO  DistriOptimizer$:408 - [Epoch 2 8/8][Iteration 4][Wall Clock 0.38220661s] Trained 4 records in 0.083033743 seconds. Throughput is 48.173187 records/second. Loss is 2.2490768. Sequential7f6e88b4's hyper parameters: Current learning rate is 0.009994003597841297. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:42:21 INFO  DistriOptimizer$:452 - [Epoch 2 8/8][Iteration 4][Wall Clock 0.38220661s] Epoch finished. Wall clock time is 395.258279 ms
+2019-07-04 16:43:31 INFO  DistriOptimizer$:784 - caching training rdd ...
+2019-07-04 16:43:32 INFO  DistriOptimizer$:624 - Cache thread models...
+2019-07-04 16:43:32 INFO  DistriOptimizer$:606 - model thread pool size is 1
+2019-07-04 16:43:32 WARN  BlockManager:66 - Asked to remove block test_0weights0, which does not exist
+2019-07-04 16:43:32 WARN  BlockManager:66 - Asked to remove block test_0gradients0, which does not exist
+2019-07-04 16:43:32 INFO  DistriOptimizer$:626 - Cache thread models... done
+2019-07-04 16:43:32 INFO  DistriOptimizer$:154 - Count dataset
+2019-07-04 16:43:32 INFO  DistriOptimizer$:158 - Count dataset complete. Time elapsed: 0.032191201s
+2019-07-04 16:43:32 INFO  DistriOptimizer$:166 - config  {
+	computeThresholdbatchSize: 100
+	maxDropPercentage: 0.0
+	warmupIterationNum: 200
+	isLayerwiseScaled: false
+	dropPercentage: 0.0
+ }
+2019-07-04 16:43:32 INFO  DistriOptimizer$:170 - Shuffle data
+2019-07-04 16:43:32 INFO  DistriOptimizer$:173 - Shuffle data complete. Takes 0.017051733s
+2019-07-04 16:43:32 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:43:32 INFO  DistriOptimizer$:408 - [Epoch 1 4/8][Iteration 1][Wall Clock 0.177586093s] Trained 4 records in 0.177586093 seconds. Throughput is 22.524286 records/second. Loss is 0.97424316. Sequentialae83c9e6's hyper parameters: Current learning rate is 0.01. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:43:32 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:43:32 INFO  DistriOptimizer$:408 - [Epoch 1 8/8][Iteration 2][Wall Clock 0.247948552s] Trained 4 records in 0.070362459 seconds. Throughput is 56.8485 records/second. Loss is 0.8815918. Sequentialae83c9e6's hyper parameters: Current learning rate is 0.009998000399920017. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:43:32 INFO  DistriOptimizer$:452 - [Epoch 1 8/8][Iteration 2][Wall Clock 0.247948552s] Epoch finished. Wall clock time is 259.935513 ms
+2019-07-04 16:43:32 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:43:32 INFO  DistriOptimizer$:408 - [Epoch 2 4/8][Iteration 3][Wall Clock 0.337626896s] Trained 4 records in 0.077691383 seconds. Throughput is 51.48576 records/second. Loss is 0.89746094. Sequentialae83c9e6's hyper parameters: Current learning rate is 0.009996001599360257. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:43:32 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:43:32 INFO  DistriOptimizer$:408 - [Epoch 2 8/8][Iteration 4][Wall Clock 0.417968652s] Trained 4 records in 0.080341756 seconds. Throughput is 49.78731 records/second. Loss is 1.7174683. Sequentialae83c9e6's hyper parameters: Current learning rate is 0.009994003597841297. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:43:32 INFO  DistriOptimizer$:452 - [Epoch 2 8/8][Iteration 4][Wall Clock 0.417968652s] Epoch finished. Wall clock time is 431.727829 ms
+2019-07-04 16:44:09 INFO  DistriOptimizer$:784 - caching training rdd ...
+2019-07-04 16:44:10 INFO  DistriOptimizer$:624 - Cache thread models...
+2019-07-04 16:44:10 INFO  DistriOptimizer$:606 - model thread pool size is 1
+2019-07-04 16:44:10 WARN  BlockManager:66 - Asked to remove block test_0weights0, which does not exist
+2019-07-04 16:44:10 WARN  BlockManager:66 - Asked to remove block test_0gradients0, which does not exist
+2019-07-04 16:44:10 INFO  DistriOptimizer$:626 - Cache thread models... done
+2019-07-04 16:44:10 INFO  DistriOptimizer$:154 - Count dataset
+2019-07-04 16:44:10 INFO  DistriOptimizer$:158 - Count dataset complete. Time elapsed: 0.033585347s
+2019-07-04 16:44:10 INFO  DistriOptimizer$:166 - config  {
+	computeThresholdbatchSize: 100
+	maxDropPercentage: 0.0
+	warmupIterationNum: 200
+	isLayerwiseScaled: false
+	dropPercentage: 0.0
+ }
+2019-07-04 16:44:10 INFO  DistriOptimizer$:170 - Shuffle data
+2019-07-04 16:44:10 INFO  DistriOptimizer$:173 - Shuffle data complete. Takes 0.017300419s
+2019-07-04 16:44:10 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:44:10 INFO  DistriOptimizer$:408 - [Epoch 1 4/8][Iteration 1][Wall Clock 0.172401369s] Trained 4 records in 0.172401369 seconds. Throughput is 23.201672 records/second. Loss is 1.0869751. Sequentialcf6cbfc6's hyper parameters: Current learning rate is 0.01. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:44:10 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:44:10 INFO  DistriOptimizer$:408 - [Epoch 1 8/8][Iteration 2][Wall Clock 0.239630674s] Trained 4 records in 0.067229305 seconds. Throughput is 59.49786 records/second. Loss is 1.6759338. Sequentialcf6cbfc6's hyper parameters: Current learning rate is 0.009998000399920017. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:44:10 INFO  DistriOptimizer$:452 - [Epoch 1 8/8][Iteration 2][Wall Clock 0.239630674s] Epoch finished. Wall clock time is 251.403866 ms
+2019-07-04 16:44:10 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:44:10 INFO  DistriOptimizer$:408 - [Epoch 2 4/8][Iteration 3][Wall Clock 0.314277991s] Trained 4 records in 0.062874125 seconds. Throughput is 63.61918 records/second. Loss is 1.0685425. Sequentialcf6cbfc6's hyper parameters: Current learning rate is 0.009996001599360257. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:44:10 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:44:10 INFO  DistriOptimizer$:408 - [Epoch 2 8/8][Iteration 4][Wall Clock 0.371158792s] Trained 4 records in 0.056880801 seconds. Throughput is 70.322495 records/second. Loss is 0.7324219. Sequentialcf6cbfc6's hyper parameters: Current learning rate is 0.009994003597841297. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:44:10 INFO  DistriOptimizer$:452 - [Epoch 2 8/8][Iteration 4][Wall Clock 0.371158792s] Epoch finished. Wall clock time is 379.836164 ms
+2019-07-04 16:44:10 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:44:10 INFO  DistriOptimizer$:408 - [Epoch 3 4/8][Iteration 5][Wall Clock 0.453121378s] Trained 4 records in 0.073285214 seconds. Throughput is 54.58127 records/second. Loss is 1.732727. Sequentialcf6cbfc6's hyper parameters: Current learning rate is 0.009992006394884094. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:44:10 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:44:10 INFO  DistriOptimizer$:408 - [Epoch 3 8/8][Iteration 6][Wall Clock 0.545038067s] Trained 4 records in 0.091916689 seconds. Throughput is 43.51767 records/second. Loss is 1.8633728. Sequentialcf6cbfc6's hyper parameters: Current learning rate is 0.009990009990009992. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:44:10 INFO  DistriOptimizer$:452 - [Epoch 3 8/8][Iteration 6][Wall Clock 0.545038067s] Epoch finished. Wall clock time is 558.712357 ms
+2019-07-04 16:44:10 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:44:11 INFO  DistriOptimizer$:408 - [Epoch 4 4/8][Iteration 7][Wall Clock 0.649862863s] Trained 4 records in 0.091150506 seconds. Throughput is 43.883465 records/second. Loss is 1.6737366. Sequentialcf6cbfc6's hyper parameters: Current learning rate is 0.00998801438274071. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:44:11 WARN  DistriOptimizer$:230 - Warning: for better training speed, total batch size is recommended to be at least two times of core number4, please tune your batch size accordingly
+2019-07-04 16:44:11 INFO  DistriOptimizer$:408 - [Epoch 4 8/8][Iteration 8][Wall Clock 0.687579462s] Trained 4 records in 0.037716599 seconds. Throughput is 106.05411 records/second. Loss is 1.3852844. Sequentialcf6cbfc6's hyper parameters: Current learning rate is 0.009986019572598362. Current dampening is 1.7976931348623157E308.  
+2019-07-04 16:44:11 INFO  DistriOptimizer$:452 - [Epoch 4 8/8][Iteration 8][Wall Clock 0.687579462s] Epoch finished. Wall clock time is 705.847315 ms
+2019-07-04 16:54:23 WARN  SparkContext:66 - Using an existing SparkContext; some configuration may not take effect.
+2019-07-04 16:59:13 WARN  SparkContext:66 - Using an existing SparkContext; some configuration may not take effect.
+2019-07-04 17:01:49 WARN  SparkContext:66 - Using an existing SparkContext; some configuration may not take effect.
+2019-07-04 17:05:43 WARN  SparkContext:66 - Using an existing SparkContext; some configuration may not take effect.

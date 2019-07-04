@@ -187,16 +187,16 @@ class TransE:
 if __name__ == "__main__":
     conf=SparkConf().setAppName('test').setMaster('spark://saba-Aspire-VN7-591G:7077')
     sc = SparkContext.getOrCreate(conf)
-    entity2id = pd.read_table("/home/saba/Documents/Big Data Lab/dummydata/entity2id.txt", header=None)
+    entity2id = pd.read_table("/home/saba/Documents/Big Data Lab/data/WN18/entity2id.txt", header=None)
     dict_entities = dict(zip(entity2id[0], entity2id[1]))
     print(len(entity2id))
-    relation_df = pd.read_table("/home/saba/Documents/Big Data Lab/dummydata/relation2id.txt", header=None)
+    relation_df = pd.read_table("/home/saba/Documents/Big Data Lab/data/WN18/relation2id.txt", header=None)
     dict_relations = dict(zip(relation_df[0], relation_df[1]))
     print(len(relation_df))
-    training_df = pd.read_table("/home/saba/Documents/Big Data Lab/dummydata/train.txt", header=None)
-    training_triples = list(zip([dict_entities[h]+1 for h in training_df[0]],
-                                 [dict_entities[t]+1 for t in training_df[1]],
-                                  [dict_relations[r]+1 for r in training_df[2]]))
+    training_df = pd.read_table("/home/saba/Documents/Big Data Lab/data/WN18/train.txt", header=None)
+    training_triples = list(zip([dict_entities[h] + 1 for h in training_df[0]],
+                                 [dict_entities[t] + 1 for t in training_df[1]],
+                                  [dict_relations[r]+len(entity2id) + 1 for r in training_df[2]]))
 
     transE = TransE(dict_entities, dict_relations, training_triples, margin=1, dim=50)
     transE.transE(1)
