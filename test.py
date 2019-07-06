@@ -184,7 +184,7 @@ class TransE:
         record = sample_rdd.zip(labels)
         test_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
 
-        model = self.make_samples()
+        # model = self.make_samples()
 
         model = Model.loadModel("/home/saba/Documents/Big Data Lab/data/model.bigdl", "/home/saba/Documents/Big Data Lab/data/model.bin")
         result = model.evaluate(test_data, 8, [Top1Accuracy()])
@@ -329,7 +329,7 @@ class TransE:
 
         #model = Model.loadModel("/home/saba/Documents/Big Data Lab/data/model.bigdl",
         #                        "/home/saba/Documents/Big Data Lab/data/model.bin")
-        result = trained_model.evaluate(test_data, 8, [Top1Accuracy()])
+        result = trained_model.predict(test_data)
         print("result",result)
         return trained_model
         # trained_model.saveModel("/home/saba/Documents/Big Data Lab/data/model.bigdl", "/home/saba/Documents/Big Data Lab/data/model.bin", True)
@@ -378,7 +378,7 @@ if __name__ == "__main__":
 
     transE.make_samples(transE.total_embeddings)
 
-    transE.generate_corrupted_test_triplets()
+    # transE.generate_corrupted_test_triplets()
     # transE.validation = validation_triples
     # transE.generate_corrupted_triplets()
     # transE.validate(no_entities_relations)
