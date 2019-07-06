@@ -114,13 +114,13 @@ train_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
 
 
 
-# #### JTensor
-# sample = np.array([[[[ 1],
-#          [ 2],
-#          [ 3 ]],
-#         [[ 4],
-#          [ 5],
-#          [ 6]]]])
+#### JTensor
+sample = np.array([[[[ 1],
+         [ 2],
+         [ 3 ]],
+        [[ 4],
+         [ 5],
+         [ 6]]]])
 # train_data = JTensor.from_ndarray(sample)
 model =Sequential()
 model.add(Reshape([6]))
@@ -233,6 +233,8 @@ optimizer = Optimizer(
     optim_method=SGD(learningrate=0.01,learningrate_decay=0.0002),
     end_trigger=MaxEpoch(4),
     batch_size=4)
+
+
 optimizer.optimize()
 
 #
