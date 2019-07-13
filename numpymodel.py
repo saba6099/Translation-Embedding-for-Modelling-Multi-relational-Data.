@@ -32,55 +32,55 @@ sc = SparkContext.getOrCreate(conf)
 # # init_engine()
 # # optimizer = Optimizer(model, train_data, MSECriterion(), MaxIteration(10), 4)
 # # optimizer.optimize()
-# # model.get_weights()[0]
-sample = np.array([[[[ 1],
-         [ 2],
-         [ 3 ]],
-        [[ 4],
-         [ 5],
-         [ 6]]],
-       [[[ 7],
-         [ 8],
-         [ 9]],
-        [[ 10],
-         [ 11],
-         [ 12]]],
-       [[[ 13],
-         [ 14],
-         [ 15]],
-        [[ 16],
-         [ 17],
-         [ 18]]],
-       [[[ 19],
-         [ 20],
-         [ 21]],
-        [[ 22],
-         [ 23],
-         [ 24]]],
-       [[[ 25],
-         [ 26],
-         [ 27]],
-        [[ 28  ],
-         [ 29],
-         [ 30]]],
-       [[[ 31],
-         [ 32],
-         [ 33]],
-        [[ 34],
-         [ 35],
-         [ 36]]],
-       [[[ 37],
-         [ 38],
-         [ 39]],
-        [[ 40],
-         [ 41],
-         [42]]],
-       [[[ 43],
-         [ 44],
-         [ 45]],
-        [[ 46],
-         [ 47],
-         [ 48]]]])
+# # # model.get_weights()[0]
+# sample = np.array([[[[ 1],
+#          [ 2],
+#          [ 3 ]],
+#         [[ 4],
+#          [ 5],
+#          [ 6]]],
+#        [[[ 7],
+#          [ 8],
+#          [ 9]],
+#         [[ 10],
+#          [ 11],
+#          [ 12]]],
+#        [[[ 13],
+#          [ 14],
+#          [ 15]],
+#         [[ 16],
+#          [ 17],
+#          [ 18]]],
+#        [[[ 19],
+#          [ 20],
+#          [ 21]],
+#         [[ 22],
+#          [ 23],
+#          [ 24]]],
+#        [[[ 25],
+#          [ 26],
+#          [ 27]],
+#         [[ 28  ],
+#          [ 29],
+#          [ 30]]],
+#        [[[ 31],
+#          [ 32],
+#          [ 33]],
+#         [[ 34],
+#          [ 35],
+#          [ 36]]],
+#        [[[ 37],
+#          [ 38],
+#          [ 39]],
+#         [[ 40],
+#          [ 41],
+#          [42]]],
+#        [[[ 43],
+#          [ 44],
+#          [ 45]],
+#         [[ 46],
+#          [ 47],
+#          [ 48]]]])
 
 
 
@@ -102,12 +102,12 @@ sample = np.array([[[[ 1],
 #print(a)
 
 
-sample_rdd = sc.parallelize(sample)
-labels = np.zeros(8)
-# labels=np.array([[1],[1],[1],[1]])
-labels = sc.parallelize(labels)
-record = sample_rdd.zip(labels)
-train_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
+# sample_rdd = sc.parallelize(sample)
+# labels = np.zeros(8)
+# # labels=np.array([[1],[1],[1],[1]])
+# labels = sc.parallelize(labels)
+# record = sample_rdd.zip(labels)
+# train_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
 
 # print(train_data.collect())
 
@@ -173,6 +173,10 @@ model.add(branches)
 pos_plus_margin=Sequential().add(SelectTable(1)).add(AddConstant(1.0))
 
 model.add(ConcatTable().add(pos_plus_margin).add(SelectTable(2))).add(CSubTable()).add(Abs())
+
+result = model.predict(sample)
+# print("Result",result.take(5))
+
 # output = model.forward(train_data)
 # print(output)
 #

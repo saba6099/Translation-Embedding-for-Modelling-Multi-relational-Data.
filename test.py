@@ -3,6 +3,7 @@ from bigdl.nn.criterion import *
 import pandas as pd
 from bigdl.util.common import *
 import time
+import sys
 import random
 from bigdl.optim.optimizer import *
 
@@ -14,39 +15,45 @@ from bigdl.nn.criterion import *
 from bigdl.optim.optimizer import *
 
 from pyspark import SparkContext, SparkConf
-os.environ["PYSPARK_PYTHON"]="/usr/local/bin/python3"
+# os.environ["PYSPARK_PYTHON"]="/usr/local/bin/python3"
 
 
-def create_model(total_embeddings, embedding_dim = 30, margin=1.0):
+def create_model(total_embeddings, embedding_dim = 2, margin=1.0):
     model = Sequential()
     model.add(Reshape([6]))
+
     embedding = LookupTable(total_embeddings, embedding_dim)
     model.add(embedding)
+
+    # print(model.forward(train_data.take(1)[0].features))
     model.add(Reshape([2, 3, 1, embedding_dim])).add(Squeeze(1))
     # print(model.forward((train_data)))
-    model.add(SplitTable(1))
-
+    model.add(SplitTable(2))
+    # return model
     branches = ParallelTable()
     branch1 = Sequential()
-    pos_h_l = Sequential().add(ConcatTable().add(Select(1, 1)).add(Select(1, 3)))
+    # x = Sequential().add(Select(2, 1))
+
+    pos_h_l = Sequential().add(ConcatTable().add(Select(2, 1)).add(Select(2, 3)))
     pos_add = pos_h_l.add(CAddTable())
-    pos_t = Sequential().add(Select(1, 2)).add(MulConstant(-1.0))
+    pos_t = Sequential().add(Select(2, 2)).add(MulConstant(-1.0))
     triplepos_meta = Sequential().add(ConcatTable().add(pos_add).add(pos_t))
     triplepos_dist = triplepos_meta.add(CAddTable()).add(Abs())
-    triplepos_score = triplepos_dist.add(Unsqueeze(1)).add(Mean(3, 1)).add(MulConstant(float(embedding_dim)))
-    branch1.add(triplepos_score)  # .add(AddConstant(1.0))#.add(Unsqueeze(1))
+    triplepos_score = triplepos_dist.add(Unsqueeze(1)).add(Mean(4, 1)).add(MulConstant(float(embedding_dim)))
+    branch1.add(triplepos_score).add(Squeeze(3)).add(Squeeze(1))
 
     branch2 = Sequential()
-    neg_h_l = Sequential().add(ConcatTable().add(Select(1, 1)).add(Select(1, 3)))
+    neg_h_l = Sequential().add(ConcatTable().add(Select(2, 1)).add(Select(2, 3)))
     neg_add = neg_h_l.add(CAddTable())
-    neg_t = Sequential().add(Select(1, 2)).add(MulConstant(-1.0))
+    neg_t = Sequential().add(Select(2, 2)).add(MulConstant(-1.0))
     tripleneg_meta = Sequential().add(ConcatTable().add(neg_add).add(neg_t))
     tripleneg_dist = tripleneg_meta.add(CAddTable()).add(Abs())
-    tripleneg_score = tripleneg_dist.add(Unsqueeze(1)).add(Mean(3, 1)).add(MulConstant(float(embedding_dim)))
-    branch2.add(tripleneg_score)  # .add(Unsqueeze(1))
+    tripleneg_score = tripleneg_dist.add(Unsqueeze(1)).add(Mean(4, 1)).add(MulConstant(float(embedding_dim)))
+    branch2.add(tripleneg_score).add(Squeeze(3)).add(Squeeze(1))
 
     branches.add(branch1).add(branch2)
     model.add(branches)
+    return model
 
     pos_plus_margin = Sequential().add(SelectTable(1)).add(AddConstant(margin))
 
@@ -81,6 +88,7 @@ class TransE:
         self.relation = []
         self.triple_embeddings = []
         self.batch_total = []
+        self.batch_total_validation = []
         self.total_embeddings = 0
 
 
@@ -93,11 +101,11 @@ class TransE:
             if count == 0:
                 start_time = time.time()
             count += 1
-            print("Batch number:", count)
+            # print("Batch number:", count)
             if(type == "train"):
                 Sbatch = self.triplets_list
             else:
-                Sbatch = self.validation
+                Sbatch = self.test_triples
 
             raw_batch = Sbatch
             if raw_batch is None:
@@ -122,74 +130,77 @@ class TransE:
                     batch_total.append([batch_pos, batch_neg])
             self.batch_neg += batch_neg
             self.batch_pos += batch_pos
-            self.batch_total+=(batch_total)
-        print(("batch_pos",self.batch_pos))
-        print(("batch_neg",self.batch_neg))
-
-    def distance(self, head, tail, relation, corrupted_head, corrupted_tail, corrupted_relation):
-        # sample=np.array([[[[head],[tail],[relation]],[[corrupted_head],[corrupted_tail],[corrupted_relation]]]])
-        sample = np.array([[[[1],
-                             [2],
-                             [3]],
-                            [[4],
-                             [5],
-                             [6]]],
-                           [[[7],
-                             [8],
-                             [9]],
-                            [[10],
-                             [11],
-                             [12]]],
-                           [[[13],
-                             [14],
-                             [15]],
-                            [[16],
-                             [17],
-                             [18]]],
-                           [[[19],
-                             [20],
-                             [21]],
-                            [[22],
-                             [23],
-                             [24]]],
-                           [[[25],
-                             [26],
-                             [27]],
-                            [[28],
-                             [29],
-                             [30]]],
-                           [[[31],
-                             [32],
-                             [33]],
-                            [[34],
-                             [35],
-                             [36]]],
-                           [[[37],
-                             [38],
-                             [39]],
-                            [[40],
-                             [41],
-                             [42]]],
-                           [[[43],
-                             [44],
-                             [45]],
-                            [[46],
-                             [47],
-                             [48]]]])
-        # test_data = JTensor.from_ndarray(sample)
-        sample_rdd = sc.parallelize(sample)
-        labels = np.zeros(8)
-        # labels=np.array([[1],[1],[1],[1]])
-        labels = sc.parallelize(labels)
-        record = sample_rdd.zip(labels)
-        test_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
-
-        # model = self.make_samples()
-
-        model = Model.loadModel("/home/saba/Documents/Big Data Lab/data/model.bigdl", "/home/saba/Documents/Big Data Lab/data/model.bin")
-        result = model.evaluate(test_data, 8, [Top1Accuracy()])
-        print(result)
-        return result
+            if(type == "validation"):
+                self.batch_total_validation+=batch_total
+            else:
+                self.batch_total+=(batch_total)
+        # print(("batch_pos",self.batch_pos))
+        # print(("batch_neg",self.batch_neg))
+    #
+    # def distance(self, head, tail, relation, corrupted_head, corrupted_tail, corrupted_relation):
+    #     # sample=np.array([[[[head],[tail],[relation]],[[corrupted_head],[corrupted_tail],[corrupted_relation]]]])
+    #     sample = np.array([[[[1],
+    #                          [2],
+    #                          [3]],
+    #                         [[4],
+    #                          [5],
+    #                          [6]]],
+    #                        [[[7],
+    #                          [8],
+    #                          [9]],
+    #                         [[10],
+    #                          [11],
+    #                          [12]]],
+    #                        [[[13],
+    #                          [14],
+    #                          [15]],
+    #                         [[16],
+    #                          [17],
+    #                          [18]]],
+    #                        [[[19],
+    #                          [20],
+    #                          [21]],
+    #                         [[22],
+    #                          [23],
+    #                          [24]]],
+    #                        [[[25],
+    #                          [26],
+    #                          [27]],
+    #                         [[28],
+    #                          [29],
+    #                          [30]]],
+    #                        [[[31],
+    #                          [32],
+    #                          [33]],
+    #                         [[34],
+    #                          [35],
+    #                          [36]]],
+    #                        [[[37],
+    #                          [38],
+    #                          [39]],
+    #                         [[40],
+    #                          [41],
+    #                          [42]]],
+    #                        [[[43],
+    #                          [44],
+    #                          [45]],
+    #                         [[46],
+    #                          [47],
+    #                          [48]]]])
+    #     # test_data = JTensor.from_ndarray(sample)
+    #     sample_rdd = sc.parallelize(sample)
+    #     labels = np.zeros(8)
+    #     # labels=np.array([[1],[1],[1],[1]])
+    #     labels = sc.parallelize(labels)
+    #     record = sample_rdd.zip(labels)
+    #     test_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
+    #
+    #     # model = self.make_samples()
+    #
+    #     model = Model.loadModel("/home/saba/Documents/Big Data Lab/data/model.bigdl", "/home/saba/Documents/Big Data Lab/data/model.bin")
+    #     result = model.evaluate(test_data, 8, [Top1Accuracy()])
+    #     print(result)
+    #     return result
 
     def generate_corrupted_test_triplets(self, cycle_index=1):
         batch_neg_head_replaced = {}
@@ -256,26 +267,127 @@ class TransE:
         labels = sc.parallelize(labels)
         record = sample_rdd.zip(labels)
         train_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
+        # print("Train Data",train_data.take(10))
         print("Hello")
 
 
+        sample = np.array(self.batch_total_validation)
+        sample_rdd = sc.parallelize(sample)
+        labels = np.zeros(len(self.test_triples))
+        labels = sc.parallelize(labels)
+        record = sample_rdd.zip(labels)
+        test_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
+        # print(test_data.take(10))
+
+        # sample = np.array([[[[1],
+        #                      [2],
+        #                      [3]],
+        #                     [[4],
+        #                      [5],
+        #                      [6]]]])
+        # print(sample.shape)
+        sample = np.array([[[[1], [3], [2]], [[2], [3], [3]]],
+                           [[[3], [2], [2]],[[3], [1], [2]]],[[[1], [3], [2]], [[2], [3], [3]]],
+                           [[[3], [2], [2]],[[3], [1], [2]]]])
+        # # sample = np.random.randint(1, 4, (5, 2, 3, 1))
+        #
+        # print(sample)
+        train_data = JTensor.from_ndarray(sample)
+        print(train_data)
+        # # model = create_model(total_embeddings, train_data)
+        model = create_model(total_embeddings)
+        # self.parameters = model.parameters()
+        print(model.parameters())
+        # f = open("/home/saba/Documents/Big Data Lab/andmed.txt", "w")
+        #
+        # f.write(str(model.parameters()))
+        # output = model.forward(sample)
+        # print("Model Output", output)
+        # sys.exit()
+        # print(train_data.take(1))
+
         optimizer = Optimizer(
-            model = create_model(total_embeddings),
+            model = model,
             training_rdd = train_data,
-            criterion = AbsCriterion(False),
-            optim_method = SGD(learningrate=0.01, learningrate_decay=0.0002),
-            end_trigger = MaxEpoch(1),
-            batch_size = 4)
+            criterion = AbsCriterion(size_average=False),
+            optim_method = SGD(learningrate=0.01,learningrate_decay=0.001,weightdecay=0.001,
+                   momentum=0.0,dampening=DOUBLEMAX,nesterov=False,
+                   leaningrate_schedule=None,learningrates=None,
+                   weightdecays=None,bigdl_type="float"),
+            end_trigger = MaxEpoch(2),
+            batch_size = 1)
+
+        # optimizer.set_validation(
+        #     batch_size=128,
+        #     val_rdd=validation_data,
+        #     trigger=EveryEpoch(),
+        #     val_method=[Top1Accuracy()]
+        # )
 
         trained_model = optimizer.optimize()
 
-        sample = np.array([[[[1],
-                             [2],
-                             [3]],
-                            [[4],
-                             [5],
-                             [6]]]])
-        test_data = JTensor.from_ndarray(sample)
+        print(trained_model.parameters())
+
+        # result = trained_model.evaluate(train_data, 8, [Loss(AbsCriterion(False))])
+        # result = trained_model.evaluate(test_data, 8, [Loss()])
+
+
+        # result = trained_model.predict(test_data)
+        # print("Result",result.take(1))
+        # print("Result", result)
+
+
+        #print(trained_model("embedding"))
+
+        # sample = np.array([[[[1],
+        #                      [2],
+        #                      [3]],
+        #                     [[4],
+        #                      [5],
+        #                      [6]]],
+        #                    [[[7],
+        #                      [8],
+        #                      [9]],
+        #                     [[10],
+        #                      [11],
+        #                      [12]]],
+        #                    [[[13],
+        #                      [14],
+        #                      [15]],
+        #                     [[16],
+        #                      [17],
+        #                      [18]]],
+        #                    [[[19],
+        #                      [20],
+        #                      [21]],
+        #                     [[22],
+        #                      [23],
+        #                      [24]]],
+        #                    [[[25],
+        #                      [26],
+        #                      [27]],
+        #                     [[28],
+        #                      [29],
+        #                      [30]]],
+        #                    [[[31],
+        #                      [32],
+        #                      [33]],
+        #                     [[34],
+        #                      [35],
+        #                      [36]]],
+        #                    [[[37],
+        #                      [38],
+        #                      [39]],
+        #                     [[40],
+        #                      [41],
+        #                      [42]]],
+        #                    [[[43],
+        #                      [44],
+        #                      [45]],
+        #                     [[46],
+        #                      [47],
+        #                      [48]]]])
+        # # test_data = JTensor.from_ndarray(sample)
         # sample_rdd = sc.parallelize(sample)
         # labels = np.zeros(8)
         # # labels=np.array([[1],[1],[1],[1]])
@@ -287,9 +399,7 @@ class TransE:
 
         #model = Model.loadModel("/home/saba/Documents/Big Data Lab/data/model.bigdl",
         #                        "/home/saba/Documents/Big Data Lab/data/model.bin")
-        result = trained_model.predict(test_data)
-        print("result",result)
-        return trained_model
+
         # trained_model.saveModel("/home/saba/Documents/Big Data Lab/data/model.bigdl", "/home/saba/Documents/Big Data Lab/data/model.bin", True)
     #
     # def validate(self):
@@ -329,7 +439,7 @@ if __name__ == "__main__":
 
     transE = TransE(dict_entities, dict_relations, training_triples, validation_triples, testing_triples,margin=1, dim=50)
     transE.generate_corrupted_triplets(type="train")
-
+    transE.generate_corrupted_triplets(type="validation")
 
     transE.total_embeddings = len(entities)+len(relations)
     #print("type",(no_entities_relations))
