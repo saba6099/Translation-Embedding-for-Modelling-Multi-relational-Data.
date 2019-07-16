@@ -248,7 +248,7 @@ class TransE:
                         if (head_neg, tail_neg, relation) not in (self.training_triple_pool and self.batch_neg):
                             break
                     # batch_neg = [head_neg], [tail_neg], [relation]]
-                    batch_pos = [head,tail,relation,head_neg,tail_neg,relation ]
+                    batch_pos = [head,tail,relation,head_neg,tail_neg,relation]
                     batch_total.append(batch_pos)
             # self.batch_neg += batch_neg
             # self.batch_pos += batch_pos
@@ -287,6 +287,7 @@ class TransE:
 
                     for i in range(0, len(corrupt_entity_list)):
                         if (corrupt_entity_list[i], tail, relation) not in (self.training_triple_pool):
+
                             rank_list = self.distance(head, tail, relation, corrupt_entity_list[i], tail, relation)
                             # list_head_replace.append((corrupt_entity_list[i], tail, relation))
 
@@ -313,17 +314,17 @@ class TransE:
 
 
 if __name__ == "__main__":
-    conf=SparkConf().setAppName('test').setMaster('spark://saba-Aspire-VN7-591G:7077')
+    conf=SparkConf().setAppName('test').setMaster('spark://Heena:7077')
     sc = SparkContext.getOrCreate(conf)
-    entities = pd.read_table("/home/saba/Documents/Big Data Lab/data/FB15k/entity2id.txt", header=None)
+    entities = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/entity2id.txt", header=None)
     dict_entities = dict(zip(entities[0], entities[1]))
     print(len(entities))
-    relations = pd.read_table("/home/saba/Documents/Big Data Lab/data/FB15k/relation2id.txt", header=None)
+    relations = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/relation2id.txt", header=None)
     dict_relations = dict(zip(relations[0], relations[1]))
     print(len(relations))
-    training_df = pd.read_table("/home/saba/Documents/Big Data Lab/data/FB15k/train.txt", header=None)
-    validation_df = pd.read_table("/home/saba/Documents/Big Data Lab/data/FB15k/valid.txt", header=None)
-    test_df=pd.read_table("/home/saba/Documents/Big Data Lab/data/FB15k/test.txt", header=None)
+    training_df = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/train.txt", header=None)
+    validation_df = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/valid.txt", header=None)
+    test_df=pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/test.txt", header=None)
 
     training_triples = list(zip([dict_entities[h] + 1 for h in training_df[0]],
                                  [dict_entities[t] + 1 for t in training_df[1]],
@@ -344,7 +345,7 @@ if __name__ == "__main__":
 
     transE.make_samples(transE.total_embeddings)
 
-    # transE.generate_corrupted_test_triplets()
+    transE.generate_corrupted_test_triplets()
     # transE.validation = validation_triples
     # transE.generate_corrupted_triplets()
     # transE.validate(no_entities_relations)

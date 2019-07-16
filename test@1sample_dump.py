@@ -16,6 +16,30 @@ from bigdl.optim.optimizer import *
 
 from pyspark import SparkContext, SparkConf
 # os.environ["PYSPARK_PYTHON"]="/usr/local/bin/python3"
+def numpy_model(sample):
+    head_pos = []
+    relation_pos = []
+    tail_pos = []
+    head_neg = []
+    relation_neg = []
+    tail_neg = []
+    score_pos = []
+    score_neg = []
+    output = embedding.forward(sample)
+    print(output)
+    head_pos.append(output[0])
+    tail_pos.append(output[1])
+    relation_pos.append(output[2])
+    head_neg.append(output[3])
+    tail_neg.append(output[4])
+    relation_neg.append(output[5])
+    distance_pos = (head_pos[0] + relation_pos[0] - tail_pos[0])
+    distance_neg = (head_neg[0] + relation_neg[0] - tail_neg[0])
+    score_pos.append(np.fabs(distance_pos).sum())
+    score_neg.append(np.fabs(distance_neg).sum())
+
+    print("Positive Score", score_pos)
+    print("Negative Score",score_neg)
 
 
 def create_model(total_embeddings, embedding_dim = 5, margin=1.0):
@@ -115,6 +139,16 @@ class TransE:
                             [[4],
                              [5],
                              [6]]]])
+        sample = np.array([1, 2, 3, 4, 5, 6])
+
+        model = create_model(total_embeddings)
+        print(model.parameters())
+
+        # compare models
+        numpymodel = numpy_model(sample)
+        output = model.forward(sample)
+        print("Model Output", output)
+        # sys.exit()
         print(sample.shape)
         # sample = np.random.randint(1, total_embeddings - 1, (4, 2, 3, 1))
         # train_data = JTensor.from_ndarray(sample)
