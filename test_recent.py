@@ -8,14 +8,13 @@ import random
 from bigdl.optim.optimizer import *
 
 init_engine()
-import os
 
 from bigdl.nn.layer import *
+from bigdl.nn.criterion import *
 from bigdl.optim.optimizer import *
 
 from pyspark import SparkContext, SparkConf
 
-embedding = LookupTable(100, 2)
 
 def numpy_model(sample):
     head_pos = []
@@ -28,58 +27,50 @@ def numpy_model(sample):
     score_neg = []
     output = embedding.forward(sample)
     print(output)
-    for i in range(len(output)):
-        head_pos.append(output[i][0])
-        tail_pos.append(output[i][1])
-        relation_pos.append(output[i][2])
-        head_neg.append(output[i][3])
-        tail_neg.append(output[i][4])
-        relation_neg.append(output[i][5])
-        distance_pos = (head_pos[i] + relation_pos[i] - tail_pos[i])
-        distance_neg = (head_neg[i] + relation_neg[i] - tail_neg[i])
-        score_pos.append(np.fabs(distance_pos).sum())
-        score_neg.append(np.fabs(distance_neg).sum())
-
+    head_pos.append(output[0])
+    tail_pos.append(output[1])
+    relation_pos.append(output[2])
+    head_neg.append(output[3])
+    tail_neg.append(output[4])
+    relation_neg.append(output[5])
+    distance_pos = (head_pos[0] + relation_pos[0] - tail_pos[0])
+    distance_neg = (head_neg[0] + relation_neg[0] - tail_neg[0])
+    score_pos.append(np.fabs(distance_pos).sum())
+    score_neg.append(np.fabs(distance_neg).sum())
 
     print("Positive Score", score_pos)
-    print("Negative Score", score_neg)
+    print("Negative Score",score_neg)
 
-def create_model(total_embeddings, embedding_dim = 10, margin=1.0):
-    global embedding
+def create_model(total_embeddings, embedding_dim = 2, margin=1.0):
     model = Sequential()
     model.add(Reshape([6]))
-
+    global embedding
     embedding = LookupTable(total_embeddings, embedding_dim)
-
-
     model.add(embedding)
 
-    # print(model.forward(train_data.take(1)[0].features))
     model.add(Reshape([2, 3, 1, embedding_dim])).add(Squeeze(1))
     # print(model.forward((train_data)))
+    model.add(SplitTable(1))
     # return model
-    model.add(SplitTable(2))
-    # return model
+
     branches = ParallelTable()
     branch1 = Sequential()
-    # x = Sequential().add(Select(2, 1))
-
-    pos_h_l = Sequential().add(ConcatTable().add(Select(2, 1)).add(Select(2, 3)))
+    pos_h_l = Sequential().add(ConcatTable().add(Select(1, 1)).add(Select(1, 3)))
     pos_add = pos_h_l.add(CAddTable())
-    pos_t = Sequential().add(Select(2, 2)).add(MulConstant(-1.0))
+    pos_t = Sequential().add(Select(1, 2)).add(MulConstant(-1.0))
     triplepos_meta = Sequential().add(ConcatTable().add(pos_add).add(pos_t))
     triplepos_dist = triplepos_meta.add(CAddTable()).add(Abs())
-    triplepos_score = triplepos_dist.add(Unsqueeze(1)).add(Mean(4, 1)).add(MulConstant(float(embedding_dim)))
-    branch1.add(triplepos_score).add(Squeeze(3)).add(Squeeze(1)).add(Unsqueeze(2))
+    triplepos_score = triplepos_dist.add(Unsqueeze(1)).add(Mean(3, 1)).add(MulConstant(float(embedding_dim)))
+    branch1.add(triplepos_score)
 
     branch2 = Sequential()
-    neg_h_l = Sequential().add(ConcatTable().add(Select(2, 1)).add(Select(2, 3)))
+    neg_h_l = Sequential().add(ConcatTable().add(Select(1, 1)).add(Select(1, 3)))
     neg_add = neg_h_l.add(CAddTable())
-    neg_t = Sequential().add(Select(2, 2)).add(MulConstant(-1.0))
+    neg_t = Sequential().add(Select(1, 2)).add(MulConstant(-1.0))
     tripleneg_meta = Sequential().add(ConcatTable().add(neg_add).add(neg_t))
     tripleneg_dist = tripleneg_meta.add(CAddTable()).add(Abs())
-    tripleneg_score = tripleneg_dist.add(Unsqueeze(1)).add(Mean(4, 1)).add(MulConstant(float(embedding_dim)))
-    branch2.add(tripleneg_score).add(Squeeze(3)).add(Squeeze(1)).add(Unsqueeze(2))
+    tripleneg_score = tripleneg_dist.add(Unsqueeze(1)).add(Mean(3, 1)).add(MulConstant(float(embedding_dim)))
+    branch2.add(tripleneg_score)
 
     branches.add(branch1).add(branch2)
     model.add(branches)
@@ -123,26 +114,23 @@ class TransE:
         self.total_embeddings = 0
 
 
-
-    def make_samples(self,total_embeddings):
+    def training(self, total_embeddings):
         sample = np.array(self.batch_total)
-        print(sample[0])
         sample_rdd = sc.parallelize(sample)
         # labels = np.zeros(len(self.triplets_list))
         # labels = sc.parallelize(labels)
         # record = sample_rdd.zip(labels)
-        train_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.), np.array(1.)]))
-        print("Train Data",train_data.take(2))
+        train_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.)]))
+        print("Train Data", train_data.take(1))
         print("Hello")
 
-
-        sample = np.array(self.batch_total_validation)
-        sample_rdd = sc.parallelize(sample)
-        # labels = np.zeros(len(self.test_triples))
-        # labels = sc.parallelize(labels)
-        # record = sample_rdd.zip(labels)
-        test_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.), np.array(1.)]))
-        # print(test_data.take(10))
+        # sample = np.array(self.batch_total_validation)
+        # sample_rdd = sc.parallelize(sample)
+        # # labels = np.zeros(len(self.test_triples))
+        # # labels = sc.parallelize(labels)
+        # # record = sample_rdd.zip(labels)
+        # test_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.)]))
+        # # print(test_data.take(2))
 
         # sample = np.array([[[[1],
         #                      [2],
@@ -150,72 +138,42 @@ class TransE:
         #                     [[4],
         #                      [5],
         #                      [6]]]])
-        # print(sample.shape)
-        sample = np.array([[1,2,3,4,5,6],[7,8,9,10,11,12], [7,8,9,10,11,12], [1,2,3,4,5,6], [1,2,3,4,5,6]])
-        sample2 = JTensor.from_ndarray(np.array([[1,2,3,4,5,6],[7,8,9,10,11,12]]))
-        # print("Jtensor INput", sample2)
+        sample = np.array([1,2,3,4,5,6])
 
-        # # sample = np.random.randint(1, 4, (5, 2, 3, 1))
-        #
-        # print(sample)
-        JTensors = []
-        JTensors.append(JTensor.from_ndarray(np.array([1,2,3,4,5,6])))
-
-        JTensors.append(JTensor.from_ndarray(np.array([7,8,9,10,11,12])))
-        # JTensors.append(JTensor.from_ndarray(np.array([[[1], [3], [2]],[[2], [3], [3]]])))
-        # JTensors.append(JTensor.from_ndarray(np.array([[[3], [2], [2]],[[3], [1], [2]]])))
-        # print(JTensors)
-
-
-        # train_data = JTensor.from_ndarray(sample)
-        # print(train_data)
-        # # model = create_model(total_embeddings, train_data)
         model = create_model(total_embeddings)
+        print(model.parameters())
 
+        #compare models
         numpymodel = numpy_model(sample)
-        # self.parameters = model.parameters()
-        # print(model.parameters())
-        # f = open("/home/saba/Documents/Big Data Lab/andmed.txt", "w")
-        #
-        # f.write(str(model.parameters()))
         output = model.forward(sample)
         print("Model Output", output)
         # sys.exit()
-        # print(train_data.take(1))
+
+        # optimizer = Optimizer(
+        #     model=model,
+        #     training_rdd=train_data,
+        #     criterion=MarginRankingCriterion(),
+        #     optim_method=SGD(learningrate=0.01, learningrate_decay=0.001, weightdecay=0.001,
+        #                      momentum=0.0, dampening=DOUBLEMAX, nesterov=False,
+        #                      leaningrate_schedule=None, learningrates=None,
+        #                      weightdecays=None, bigdl_type="float"),
+        #     end_trigger=MaxEpoch(2),
+        #     batch_size=4)
         #
-        print("TRaining Starts")
-        optimizer = Optimizer(
-            model = model,
-            training_rdd = train_data,
-            criterion = MarginRankingCriterion(),
-            optim_method = SGD(learningrate=0.01,learningrate_decay=0.001,weightdecay=0.001,
-                   momentum=0.0,dampening=DOUBLEMAX,nesterov=False,
-                   leaningrate_schedule=None,learningrates=None,
-                   weightdecays=None,bigdl_type="float"),
-            end_trigger = MaxEpoch(10),
-            batch_size = 8)
-        trained_model = optimizer.optimize()
-        print(trained_model.parameters())
-
-
-        # optimizer.set_validation(
-        #     batch_size=128,
-        #     val_rdd=validation_data,
-        #     trigger=EveryEpoch(),
-        #     val_method=[Top1Accuracy()]
-        # )
-
-
+        # self.trained_model = optimizer.optimize()
+        #
+        # print(self.trained_model.parameters())
 
         # result = trained_model.evaluate(train_data, 8, [Loss(AbsCriterion(False))])
-        # result = trained_model.evaluate(test_data, 8, [Loss()])
+        # result = self.trained_model.predict(test_data)
+        # print("Result", result.take(1))
+        # # print("Result", result)
+        # predmodel = Sequential().add(model).add(JoinTable(1, 1))
+        # result = predmodel.predict(train_data)
+        # print("Result", result.take(5))
 
-        predmodel = Sequential().add(trained_model).add(JoinTable(2, 2))
-        result = predmodel.predict(test_data)
-        print("Result",result.take(5))
-        print("Result", result)
 
-    def generate_corrupted_triplets(self, type = "train", cycle_index=1):
+    def generate_training_corrupted_triplets(self, cycle_index=1):
         count = 0
         print("\n********** Start TransE training **********")
         for i in range(cycle_index):
@@ -223,11 +181,7 @@ class TransE:
             if count == 0:
                 start_time = time.time()
             count += 1
-            # print("Batch number:", count)
-            if(type == "train"):
-                Sbatch = self.triplets_list
-            else:
-                Sbatch = self.test_triples
+            Sbatch = self.test_triples
 
             raw_batch = Sbatch
             if raw_batch is None:
@@ -247,19 +201,19 @@ class TransE:
                             tail_neg = random.choice(list(self.entity_dict.values()))
                         if (head_neg, tail_neg, relation) not in (self.training_triple_pool and self.batch_neg):
                             break
-                    # batch_neg = [head_neg], [tail_neg], [relation]]
-                    batch_pos = [head,tail,relation,head_neg,tail_neg,relation ]
-                    batch_total.append(batch_pos)
-            # self.batch_neg += batch_neg
-            # self.batch_pos += batch_pos
-            if(type == "validation"):
-                self.batch_total_validation+=batch_total
-            else:
-                self.batch_total+=(batch_total)
+                    batch_neg = [[head_neg], [tail_neg], [relation]]
+                    batch_pos = [[head],[tail],[relation]]
+                    batch_total.append([batch_pos, batch_neg])
+            self.batch_neg += batch_neg
+            self.batch_pos += batch_pos
+            self.batch_total+=(batch_total)
+
+    def predict_score(self, sample):
+        sample = JTensor.from_ndarray(sample)
+        return self.trained_model.predict(sample)
 
 
-
-    def generate_corrupted_test_triplets(self, cycle_index=1):
+    def test_and_calculate_rank(self, cycle_index=1):
         batch_neg_head_replaced = {}
         batch_neg_tail_replaced = {}
         list_head_replace = []
@@ -272,7 +226,6 @@ class TransE:
             count += 1
             print("Batch number:", count)
             Sbatch = self.test_triples
-            # Sbatch=self.
 
             raw_batch = Sbatch
             if raw_batch is None:
@@ -282,33 +235,33 @@ class TransE:
                 batch_neg = []
                 batch_total = []
                 for head, tail, relation in batch_pos:
-                    rank_list = {}
+                    rank_list_head = {}
+                    rank_list_tail = {}
                     corrupt_entity_list = list(self.entity_dict.values())
 
                     for i in range(0, len(corrupt_entity_list)):
                         if (corrupt_entity_list[i], tail, relation) not in (self.training_triple_pool):
-                            rank_list = self.distance(head, tail, relation, corrupt_entity_list[i], tail, relation)
+                            sample = [head, tail, relation, corrupt_entity_list[i], tail, relation]
+                            rank_list_head[i] = self.predict_score(sample)
                             # list_head_replace.append((corrupt_entity_list[i], tail, relation))
-
 
                         else:
                             continue
                     for i in range(0, len(corrupt_entity_list)):
                         if (head, corrupt_entity_list[i], relation) not in (self.training_triple_pool):
-                            rank_list = self.distance(head, tail, relation, head, corrupt_entity_list[i], relation)
+                            sample = [head, tail, relation, corrupt_entity_list[i], tail, relation]
+                            rank_list_tail[i] = self.predict_score(sample)
                             # list_tail_replace.append((head, corrupt_entity_list[i], relation ))
-
                         else:
                             continue
+
+                    head_rank = sorted(rank_list_head.items())
+                    tail_rank = sorted(rank_list_tail.items())
+
                     # batch_neg_head_replaced[(head, tail, relation)] = list_head_replace
                     # batch_neg_tail_replaced[(head, tail, relation)] = list_tail_replace
                     # list_tail_replace = []
                     # list_head_replace = []
-
-
-
-
-
 
 
 
@@ -336,21 +289,11 @@ if __name__ == "__main__":
                                 [dict_relations[r] + len(entities) + 1 for r in test_df[2]]))
 
     transE = TransE(dict_entities, dict_relations, training_triples, validation_triples, testing_triples,margin=1, dim=50)
-    transE.generate_corrupted_triplets(type="train")
-    transE.generate_corrupted_triplets(type="validation")
-
+    transE.generate_training_corrupted_triplets()
     transE.total_embeddings = len(entities)+len(relations)
-    #print("type",(no_entities_relations))
 
-    transE.make_samples(transE.total_embeddings)
+    transE.training(transE.total_embeddings)
+    transE.test_and_calculate_rank()
 
-    # transE.generate_corrupted_test_triplets()
-    # transE.validation = validation_triples
-    # transE.generate_corrupted_triplets()
-    # transE.validate(no_entities_relations)
-
-
-    #transE.create_embeddings()
-    #transE.createrdd(sc)
-    #transE.makeRDD(sc)
     sc.stop()
+

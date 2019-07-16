@@ -8,14 +8,11 @@ import random
 from bigdl.optim.optimizer import *
 
 init_engine()
-import os
 
 from bigdl.nn.layer import *
+from bigdl.nn.criterion import *
 from bigdl.optim.optimizer import *
-
 from pyspark import SparkContext, SparkConf
-
-embedding = LookupTable(100, 2)
 
 def numpy_model(sample):
     head_pos = []
@@ -26,6 +23,7 @@ def numpy_model(sample):
     tail_neg = []
     score_pos = []
     score_neg = []
+    # embedding = LookupTable(100, 2)
     output = embedding.forward(sample)
     print(output)
     for i in range(len(output)):
@@ -41,10 +39,10 @@ def numpy_model(sample):
         score_neg.append(np.fabs(distance_neg).sum())
 
 
-    print("Positive Score", score_pos)
-    print("Negative Score", score_neg)
+    print(score_pos)
+    print(score_neg)
 
-def create_model(total_embeddings, embedding_dim = 10, margin=1.0):
+def create_model(total_embeddings, embedding_dim = 2, margin=1.0):
     global embedding
     model = Sequential()
     model.add(Reshape([6]))
@@ -70,7 +68,7 @@ def create_model(total_embeddings, embedding_dim = 10, margin=1.0):
     triplepos_meta = Sequential().add(ConcatTable().add(pos_add).add(pos_t))
     triplepos_dist = triplepos_meta.add(CAddTable()).add(Abs())
     triplepos_score = triplepos_dist.add(Unsqueeze(1)).add(Mean(4, 1)).add(MulConstant(float(embedding_dim)))
-    branch1.add(triplepos_score).add(Squeeze(3)).add(Squeeze(1)).add(Unsqueeze(2))
+    branch1.add(triplepos_score).add(Squeeze(3)).add(Squeeze(1))
 
     branch2 = Sequential()
     neg_h_l = Sequential().add(ConcatTable().add(Select(2, 1)).add(Select(2, 3)))
@@ -79,7 +77,7 @@ def create_model(total_embeddings, embedding_dim = 10, margin=1.0):
     tripleneg_meta = Sequential().add(ConcatTable().add(neg_add).add(neg_t))
     tripleneg_dist = tripleneg_meta.add(CAddTable()).add(Abs())
     tripleneg_score = tripleneg_dist.add(Unsqueeze(1)).add(Mean(4, 1)).add(MulConstant(float(embedding_dim)))
-    branch2.add(tripleneg_score).add(Squeeze(3)).add(Squeeze(1)).add(Unsqueeze(2))
+    branch2.add(tripleneg_score).add(Squeeze(3)).add(Squeeze(1))
 
     branches.add(branch1).add(branch2)
     model.add(branches)
@@ -131,17 +129,17 @@ class TransE:
         # labels = np.zeros(len(self.triplets_list))
         # labels = sc.parallelize(labels)
         # record = sample_rdd.zip(labels)
-        train_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.), np.array(1.)]))
+        train_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.)]))
         print("Train Data",train_data.take(2))
         print("Hello")
 
 
         sample = np.array(self.batch_total_validation)
         sample_rdd = sc.parallelize(sample)
-        # labels = np.zeros(len(self.test_triples))
-        # labels = sc.parallelize(labels)
-        # record = sample_rdd.zip(labels)
-        test_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.), np.array(1.)]))
+        labels = np.zeros(len(self.test_triples))
+        labels = sc.parallelize(labels)
+        record = sample_rdd.zip(labels)
+        test_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
         # print(test_data.take(10))
 
         # sample = np.array([[[[1],
@@ -151,20 +149,18 @@ class TransE:
         #                      [5],
         #                      [6]]]])
         # print(sample.shape)
-        sample = np.array([[1,2,3,4,5,6],[7,8,9,10,11,12], [7,8,9,10,11,12], [1,2,3,4,5,6], [1,2,3,4,5,6]])
-        sample2 = JTensor.from_ndarray(np.array([[1,2,3,4,5,6],[7,8,9,10,11,12]]))
-        # print("Jtensor INput", sample2)
+        sample = np.array([[1,10,3,4,9,6],[34,8,19,10,31,52]])
 
         # # sample = np.random.randint(1, 4, (5, 2, 3, 1))
         #
         # print(sample)
         JTensors = []
-        JTensors.append(JTensor.from_ndarray(np.array([1,2,3,4,5,6])))
+        JTensors.append(JTensor.from_ndarray(np.array([[[1], [3], [2]], [[2], [3], [3]]])))
 
-        JTensors.append(JTensor.from_ndarray(np.array([7,8,9,10,11,12])))
-        # JTensors.append(JTensor.from_ndarray(np.array([[[1], [3], [2]],[[2], [3], [3]]])))
-        # JTensors.append(JTensor.from_ndarray(np.array([[[3], [2], [2]],[[3], [1], [2]]])))
-        # print(JTensors)
+        JTensors.append(JTensor.from_ndarray(np.array([[[3], [2], [2]],[[3], [1], [2]]])))
+        JTensors.append(JTensor.from_ndarray(np.array([[[1], [3], [2]],[[2], [3], [3]]])))
+        JTensors.append(JTensor.from_ndarray(np.array([[[3], [2], [2]],[[3], [1], [2]]])))
+        print(JTensors)
 
 
         # train_data = JTensor.from_ndarray(sample)
@@ -174,7 +170,7 @@ class TransE:
 
         numpymodel = numpy_model(sample)
         # self.parameters = model.parameters()
-        # print(model.parameters())
+        print(model.parameters())
         # f = open("/home/saba/Documents/Big Data Lab/andmed.txt", "w")
         #
         # f.write(str(model.parameters()))
@@ -182,20 +178,19 @@ class TransE:
         print("Model Output", output)
         # sys.exit()
         # print(train_data.take(1))
-        #
-        print("TRaining Starts")
-        optimizer = Optimizer(
-            model = model,
-            training_rdd = train_data,
-            criterion = MarginRankingCriterion(),
-            optim_method = SGD(learningrate=0.01,learningrate_decay=0.001,weightdecay=0.001,
-                   momentum=0.0,dampening=DOUBLEMAX,nesterov=False,
-                   leaningrate_schedule=None,learningrates=None,
-                   weightdecays=None,bigdl_type="float"),
-            end_trigger = MaxEpoch(10),
-            batch_size = 8)
-        trained_model = optimizer.optimize()
-        print(trained_model.parameters())
+
+        # optimizer = Optimizer(
+        #     model = model,
+        #     training_rdd = JTensors,
+        #     criterion = AbsCriterion(size_average=False),
+        #     optim_method = SGD(learningrate=0.01,learningrate_decay=0.001,weightdecay=0.001,
+        #            momentum=0.0,dampening=DOUBLEMAX,nesterov=False,
+        #            leaningrate_schedule=None,learningrates=None,
+        #            weightdecays=None,bigdl_type="float"),
+        #     end_trigger = MaxEpoch(2),
+        #     batch_size = 4)
+        # trained_model = optimizer.optimize()
+        # print(trained_model.parameters())
 
 
         # optimizer.set_validation(
@@ -210,10 +205,10 @@ class TransE:
         # result = trained_model.evaluate(train_data, 8, [Loss(AbsCriterion(False))])
         # result = trained_model.evaluate(test_data, 8, [Loss()])
 
-        predmodel = Sequential().add(trained_model).add(JoinTable(2, 2))
-        result = predmodel.predict(test_data)
-        print("Result",result.take(5))
-        print("Result", result)
+
+        # result = trained_model.predict(test_data)
+        # print("Result",result.take(1))
+        # print("Result", result)
 
     def generate_corrupted_triplets(self, type = "train", cycle_index=1):
         count = 0
@@ -247,11 +242,11 @@ class TransE:
                             tail_neg = random.choice(list(self.entity_dict.values()))
                         if (head_neg, tail_neg, relation) not in (self.training_triple_pool and self.batch_neg):
                             break
-                    # batch_neg = [head_neg], [tail_neg], [relation]]
-                    batch_pos = [head,tail,relation,head_neg,tail_neg,relation ]
-                    batch_total.append(batch_pos)
-            # self.batch_neg += batch_neg
-            # self.batch_pos += batch_pos
+                    batch_neg = [[head_neg], [tail_neg], [relation]]
+                    batch_pos = [[head],[tail],[relation]]
+                    batch_total.append([batch_pos, batch_neg])
+            self.batch_neg += batch_neg
+            self.batch_pos += batch_pos
             if(type == "validation"):
                 self.batch_total_validation+=batch_total
             else:
@@ -307,6 +302,12 @@ class TransE:
 
 
 
+        with open("/home/saba/Documents/Big Data Lab/data/FB15k/batch_neg_head_replaced.txt", 'w') as f:
+            for key, value in batch_neg_head_replaced.items():
+                f.write('%s:%s\n' % (key, value))
+        with open("/home/saba/Documents/Big Data Lab/data/FB15k/batch_neg_tail_replaced.txt", 'w') as f:
+            for key, value in batch_neg_head_replaced.items():
+                f.write('%s:%s\n' % (key, value))
 
 
 

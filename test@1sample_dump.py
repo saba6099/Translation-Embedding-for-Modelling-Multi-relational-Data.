@@ -90,6 +90,71 @@ class TransE:
         self.total_embeddings = 0
 
 
+    def make_samples(self,total_embeddings):
+        sample = np.array(self.batch_total)
+        sample_rdd = sc.parallelize(sample)
+        labels = np.zeros(len(self.triplets_list))
+        labels = sc.parallelize(labels)
+        record = sample_rdd.zip(labels)
+        train_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
+        print("Train Data",train_data.take(10))
+        print("Hello")
+
+
+        sample = np.array(self.batch_total_validation)
+        sample_rdd = sc.parallelize(sample)
+        labels = np.zeros(len(self.test_triples))
+        labels = sc.parallelize(labels)
+        record = sample_rdd.zip(labels)
+        test_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
+        # print(test_data.take(10))
+
+        sample = np.array([[[[1],
+                             [2],
+                             [3]],
+                            [[4],
+                             [5],
+                             [6]]]])
+        print(sample.shape)
+        # sample = np.random.randint(1, total_embeddings - 1, (4, 2, 3, 1))
+        # train_data = JTensor.from_ndarray(sample)
+        # model = create_model(total_embeddings, train_data)
+        model = create_model(total_embeddings)
+        print(model.parameters())
+        # output = model.forward(test_data)
+        # print("Model Output", output)
+        # sys.exit()
+
+
+        optimizer = Optimizer(
+            model = model,
+            training_rdd = train_data,
+            criterion = AbsCriterion(False),
+            optim_method = SGD(learningrate=0.01,learningrate_decay=0.001,weightdecay=0.001,
+                   momentum=0.0,dampening=DOUBLEMAX,nesterov=False,
+                   leaningrate_schedule=None,learningrates=None,
+                   weightdecays=None,bigdl_type="float"),
+            end_trigger = MaxEpoch(2),
+            batch_size = 4)
+
+        # optimizer.set_validation(
+        #     batch_size=128,
+        #     val_rdd=validation_data,
+        #     trigger=EveryEpoch(),
+        #     val_method=[Top1Accuracy()]
+        # )
+
+        trained_model = optimizer.optimize()
+
+        print(trained_model.parameters())
+
+        # result = trained_model.evaluate(train_data, 8, [Loss(AbsCriterion(False))])
+        # result = trained_model.evaluate(test_data, 8, [Loss()])
+
+
+        result = trained_model.predict(test_data)
+        print("Result",result.take(1))
+        # print("Result", result)
 
     def generate_corrupted_triplets(self, type = "train", cycle_index=1):
         count = 0
@@ -258,71 +323,7 @@ class TransE:
             for key, value in batch_neg_head_replaced.items():
                 f.write('%s:%s\n' % (key, value))
 
-    def make_samples(self,total_embeddings):
-        sample = np.array(self.batch_total)
-        sample_rdd = sc.parallelize(sample)
-        labels = np.zeros(len(self.triplets_list))
-        labels = sc.parallelize(labels)
-        record = sample_rdd.zip(labels)
-        train_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
-        print("Train Data",train_data.take(10))
-        print("Hello")
 
-
-        sample = np.array(self.batch_total_validation)
-        sample_rdd = sc.parallelize(sample)
-        labels = np.zeros(len(self.test_triples))
-        labels = sc.parallelize(labels)
-        record = sample_rdd.zip(labels)
-        test_data = record.map(lambda t: Sample.from_ndarray(t[0], t[1]))
-        # print(test_data.take(10))
-
-        sample = np.array([[[[1],
-                             [2],
-                             [3]],
-                            [[4],
-                             [5],
-                             [6]]]])
-        print(sample.shape)
-        # sample = np.random.randint(1, total_embeddings - 1, (4, 2, 3, 1))
-        # train_data = JTensor.from_ndarray(sample)
-        # model = create_model(total_embeddings, train_data)
-        model = create_model(total_embeddings)
-        print(model.parameters())
-        # output = model.forward(test_data)
-        # print("Model Output", output)
-        # sys.exit()
-
-
-        optimizer = Optimizer(
-            model = model,
-            training_rdd = train_data,
-            criterion = AbsCriterion(False),
-            optim_method = SGD(learningrate=0.01,learningrate_decay=0.001,weightdecay=0.001,
-                   momentum=0.0,dampening=DOUBLEMAX,nesterov=False,
-                   leaningrate_schedule=None,learningrates=None,
-                   weightdecays=None,bigdl_type="float"),
-            end_trigger = MaxEpoch(2),
-            batch_size = 4)
-
-        # optimizer.set_validation(
-        #     batch_size=128,
-        #     val_rdd=validation_data,
-        #     trigger=EveryEpoch(),
-        #     val_method=[Top1Accuracy()]
-        # )
-
-        trained_model = optimizer.optimize()
-
-        print(trained_model.parameters())
-
-        # result = trained_model.evaluate(train_data, 8, [Loss(AbsCriterion(False))])
-        # result = trained_model.evaluate(test_data, 8, [Loss()])
-
-
-        result = trained_model.predict(test_data)
-        print("Result",result.take(1))
-        # print("Result", result)
 
 
         #print(trained_model("embedding"))
