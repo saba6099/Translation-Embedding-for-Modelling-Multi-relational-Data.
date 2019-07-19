@@ -8,11 +8,3 @@
 /m/02jx1	/m/013t85	/location/location/contains
 /m/02jx1	/m/0m0bj	/location/location/contains
 /m/02bfmn	/m/04ghz4m	/film/actor/film./film/performance/film
-/m/05zrvfd	/m/04y9mm8	/award/award_category/nominees./award/award_nomination/nominated_for
-/m/04mrgz	/m/0dgrmp	/soccer/football_team/current_roster./soccer/football_roster_position/position
-/m/060bp	/m/04j53	/government/government_office_category/officeholders./government/government_position_held/jurisdiction_of_office
-/m/060bp	/m/0cmpn	/government/government_office_category/officeholders./government/government_position_held/appointed_by
-/m/07l450	/m/082gq	/film/film/genre
-/m/07h1h5	/m/029q3k	/sports/pro_athlete/teams./sports/sports_team_roster/team
-/m/06yxd	/m/09c7w0	/base/biblioness/bibs_location/country
-

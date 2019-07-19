@@ -15,6 +15,17 @@ from bigdl.optim.optimizer import *
 
 from pyspark import SparkContext, SparkConf
 
+#
+# def createsample(lst):
+#     temp_list = []
+#     for t in lst:
+#         zz = np.array(t)
+#         temp_list.append(Sample.from_ndarray(zz, labels=[np.array(1.), np.array(1.)]))
+#     return temp_list
+#
+# def createrdd_test(samplelist):
+#     test_rdd = sc.parallelize(samplelist)
+#     print(test_rdd.count())
 
 def numpy_model(sample):
     head_pos = []
@@ -43,26 +54,18 @@ def numpy_model(sample):
     print("Positive Score", score_pos)
     print("Negative Score", score_neg)
 
-def create_model(total_embeddings, embedding_dim = 10, margin=1.0):
+def create_model(total_embeddings, embedding_dim = 10):
     global embedding
     model = Sequential()
     model.add(Reshape([6]))
 
     embedding = LookupTable(total_embeddings, embedding_dim)
-
-
     model.add(embedding)
 
-    # print(model.forward(train_data.take(1)[0].features))
     model.add(Reshape([2, 3, 1, embedding_dim])).add(Squeeze(1))
-    # print(model.forward((train_data)))
-    # return model
     model.add(SplitTable(2))
-    # return model
     branches = ParallelTable()
     branch1 = Sequential()
-    # x = Sequential().add(Select(2, 1))
-
     pos_h_l = Sequential().add(ConcatTable().add(Select(2, 1)).add(Select(2, 3)))
     pos_add = pos_h_l.add(CAddTable())
     pos_t = Sequential().add(Select(2, 2)).add(MulConstant(-1.0))
@@ -83,6 +86,7 @@ def create_model(total_embeddings, embedding_dim = 10, margin=1.0):
     branches.add(branch1).add(branch2)
     model.add(branches)
     return model
+
 
 class TransE:
     def __init__(self, entity_dict, rels_dict, triplets_list, validation_triples,test_triples, margin=1, learning_rate=0.01, dim=50, normal_form="L1"):
@@ -115,31 +119,23 @@ class TransE:
         self.total_embeddings = 0
         self.corrupted_test_tail_triplets = []
         self.corrupted_test_head_triplets = []
+        self.corrupted_triplets = []
 
     def training(self, total_embeddings):
         sample = np.array(self.batch_total)
         sample_rdd = sc.parallelize(sample)
         train_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.), np.array(1.)]))
         print("Train Data", train_data.take(2))
-        print("Hello")
-
-        sample = np.array(self.batch_total_validation)
-        sample_rdd = sc.parallelize(sample)
-        test_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.), np.array(1.)]))
-        # print(test_data.take(10))
-
-        # sample = np.array([1,2,3,4,5,6])
-
+        # print(model.parameters())
         model = create_model(total_embeddings)
-        print(model.parameters())
 
-        #compare models
-        numpymodel = numpy_model(sample)
+        #compare between numpy and rdd in model
+        # numpymodel = numpy_model(sample)
         # output = model.forward(sample)
         # print("Model Output", output)
         # sys.exit()
 
-        print("TRaining Starts")
+        print("Start Training")
         optimizer = Optimizer(
             model=model,
             training_rdd=train_data,
@@ -149,28 +145,77 @@ class TransE:
                              leaningrate_schedule=None, learningrates=None,
                              weightdecays=None, bigdl_type="float"),
             end_trigger=MaxEpoch(10),
-            batch_size=8)
+            batch_size=16)
         trained_model = optimizer.optimize()
         print(trained_model.parameters())
+        print("Training is completed")
+        predmodel = Sequential().add(model).add(JoinTable(2, 2))
+        result = predmodel.predict(train_data)
+        print(result.take(2))
+
 
         trained_model.saveModel("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/model.bigdl", "/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/model.bin", True)
 
-        # predmodel = Sequential().add(trained_model).add(JoinTable(2, 2))
-        # result = predmodel.predict(train_data)
-        # print("Result", result.take(5))
-        
-    def testing(self):
-        sample = np.array(self.corrupted_test_head_triplets)
-        with open("/home/heena/Documents/Distributed-Big-Data-Lab-Project/batch_neg_head_replaced.txt", 'w') as f:
-            f.write(str(self.corrupted_test_head_triplets))
-        sample_rdd = sc.parallelize(sample)
-        test_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.), np.array(1.)]))
 
-        model = Model.loadModel("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/model.bigdl","/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/model.bin")
+    def testing(self):
+        count = 0
+        head_rank_raw =0
+        tail_rank_raw = 0
+        head_hits10_raw =0
+        tail_hits10_raw =0
+        test_samples = self.corrupted_triplets
+        # with open("/home/heena/Documents/Distributed-Big-Data-Lab-Project/batch_neg_head_replaced.txt", 'w') as f:
+        #     f.write(str(self.corrupted_triplets))
+        
+        model = Model.loadModel("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/model.bigdl",
+                                    "/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/model.bin")
         predmodel = Sequential().add(model).add(JoinTable(2, 2))
-        result = predmodel.predict(test_data)
-        # result = model.evaluate(test_data, 256, [Loss(MarginRankingCriterion())])
-        print("Result", result.take(10))
+
+        listrdd =[]
+        for sample in test_samples:
+            test_rdd = sc.parallelize(np.array(sample))
+            test_data = test_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.), np.array(1.)]))
+            listrdd.append(test_data)
+
+        tt = listrdd.
+
+        print("5555555", tt)
+            # result = predmodel.predict(test_data)
+            # # predicted_score= result.sortBy(lambda y: -y[1])
+            # # print("score", predicted_score.take(10))
+            # score = result.map(lambda t: t[0] - t[1])
+            # sorted_score = score.sortBy(lambda x: x).zipWithIndex()
+            # rank = sorted_score.filter(lambda x: x[0] == 0).map(lambda x: x[1]).take(1)
+            # print("Result", rank[0])
+            # if(count % 2 ==0):
+            #     head_rank_raw += rank[0]
+            #     if(rank[0]) <10:
+            #         head_hits10_raw += 1
+            #
+            # else:
+            #     tail_rank_raw += rank[0]
+            #     if (rank[0]) < 10:
+            #         tail_hits10_raw += 1
+            #
+            # count = count+1
+
+        # print(head_rank)
+        mean_rank = (head_rank_raw + tail_rank_raw)/len(test_samples)
+        hits10 = (head_hits10_raw + tail_hits10_raw)/len(test_samples)
+        print("Mean Rank: ", mean_rank)
+        print("Hits@10: ", hits10)
+
+
+                # print("Head Rank", rank.take(2))
+
+
+            
+
+        # test_data = sample_rdd.map(lambda t: Sample.from_ndarray(t, labels=[np.array(1.), np.array(1.)]))
+        # test_data = sample_rdd.map(lambda t: createsample(t))
+        # dd = test_data.map(lambda t: createrdd_test(t))
+        # print(dd.count())
+
 
     def generate_training_corrupted_triplets(self, cycle_index=1):
         count = 0
@@ -179,7 +224,7 @@ class TransE:
             if count == 0:
                 start_time = time.time()
             count += 1
-            Sbatch = self.test_triples
+            Sbatch = self.triplets_list
 
             raw_batch = Sbatch
             if raw_batch is None:
@@ -206,71 +251,65 @@ class TransE:
             # self.batch_pos += batch_pos
             self.batch_total+=(batch_total)
 
-    # def predict_score(self, sample):
-    #     sample = JTensor.from_ndarray(sample)
-    #     return self.trained_model.predict(sample)
-
-
-
     def generate_test_corrupted_triplets(self):
-
+        self.corrupted_triplets = []
         Sbatch = self.test_triples
 
         if Sbatch is None:
             return
 
         for head, tail, relation in Sbatch:
-            rank_list_head = {}
-            rank_list_tail = {}
             corrupt_entity_list = list(self.entity_dict.values())
+            self.corrupted_test_head_triplets = []
+            self.corrupted_test_tail_triplets = []
 
             for i in range(0, len(corrupt_entity_list)):
                 if (corrupt_entity_list[i], tail, relation) not in (self.training_triple_pool):
-                    corrupted_test_head= [head, tail, relation, corrupt_entity_list[i]+1, tail, relation]
+                    corrupted_test_head= [head, tail, relation, corrupt_entity_list[i], tail, relation]
                     self.corrupted_test_head_triplets.append(corrupted_test_head)
                 else:
                     continue
-            break
 
             for i in range(0, len(corrupt_entity_list)):
                 if (head, corrupt_entity_list[i], relation) not in (self.training_triple_pool):
-                    corrupted_test_tail = [head, tail, relation, head, corrupt_entity_list[i]+1, relation]
+                    corrupted_test_tail = [head, tail, relation, head, corrupt_entity_list[i], relation]
                     self.corrupted_test_tail_triplets.append(corrupted_test_tail)
                 else:
                     continue
 
-
+            self.corrupted_triplets.append(self.corrupted_test_head_triplets)
+            self.corrupted_triplets.append(self.corrupted_test_tail_triplets)
 
 
 
 if __name__ == "__main__":
-    conf=SparkConf().setAppName('test').setMaster('spark://Heena:7077')
+    conf=SparkConf().setAppName('test').setMaster('local[*]')
     sc = SparkContext.getOrCreate(conf)
     entities = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/entity2id.txt", header=None)
-    dict_entities = dict(zip(entities[0], entities[1]))
+    dict_entities = dict(zip(entities[0], entities[1]+1))
     print(len(entities))
     relations = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/relation2id.txt", header=None)
-    dict_relations = dict(zip(relations[0], relations[1]))
+    dict_relations = dict(zip(relations[0], relations[1]+1))
     print(len(relations))
     training_df = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/train.txt", header=None)
     validation_df = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/valid.txt", header=None)
     test_df=pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/test.txt", header=None)
 
-    training_triples = list(zip([dict_entities[h] + 1 for h in training_df[0]],
-                                 [dict_entities[t] + 1 for t in training_df[1]],
-                                  [dict_relations[r]+len(entities) + 1 for r in training_df[2]]))
-    validation_triples = list(zip([dict_entities[h] + 1 for h in validation_df[0]],
-                                [dict_entities[t] + 1 for t in validation_df[1]],
-                                [dict_relations[r] + len(entities) + 1 for r in validation_df[2]]))
-    testing_triples=list(zip([dict_entities[h] + 1 for h in test_df[0]],
-                                [dict_entities[t] + 1 for t in test_df[1]],
-                                [dict_relations[r] + len(entities) + 1 for r in test_df[2]]))
+    training_triples = list(zip([dict_entities[h] for h in training_df[0]],
+                                 [dict_entities[t] for t in training_df[1]],
+                                  [dict_relations[r]+len(entities)  for r in training_df[2]]))
+    validation_triples = list(zip([dict_entities[h] for h in validation_df[0]],
+                                [dict_entities[t] for t in validation_df[1]],
+                                [dict_relations[r] +len(entities) for r in validation_df[2]]))
+    testing_triples=list(zip([dict_entities[h] for h in test_df[0]],
+                                [dict_entities[t] for t in test_df[1]],
+                                [dict_relations[r] + len(entities) for r in test_df[2]]))
 
     transE = TransE(dict_entities, dict_relations, training_triples, validation_triples, testing_triples,margin=1, dim=50)
     transE.generate_training_corrupted_triplets()
     transE.total_embeddings = len(entities)+len(relations)
 
-    # transE.training(transE.total_embeddings+10000)
+    # transE.training(transE.total_embeddings)
     transE.generate_test_corrupted_triplets()
     transE.testing()
 

@@ -126,6 +126,8 @@ class TransE:
 
     def make_samples(self,total_embeddings):
         sample = np.array(self.batch_total)
+        with open("/home/heena/Documents/batch_neg_head_replaced.txt", 'w') as f:
+            f.write(str(self.batch_total))
         print(sample[0])
         sample_rdd = sc.parallelize(sample)
         # labels = np.zeros(len(self.triplets_list))
@@ -192,11 +194,14 @@ class TransE:
                    momentum=0.0,dampening=DOUBLEMAX,nesterov=False,
                    leaningrate_schedule=None,learningrates=None,
                    weightdecays=None,bigdl_type="float"),
-            end_trigger = MaxEpoch(10),
-            batch_size = 8)
+            end_trigger = MaxEpoch(20),
+            batch_size = 256)
         trained_model = optimizer.optimize()
+        print("TRained Model params")
         print(trained_model.parameters())
-
+        print("Hello")
+        #
+        trained_model.saveModel("/home/heena/Documents/model.bigdl", "/home/heena/Documents/model.bin", True)
 
         # optimizer.set_validation(
         #     batch_size=128,
@@ -210,10 +215,10 @@ class TransE:
         # result = trained_model.evaluate(train_data, 8, [Loss(AbsCriterion(False))])
         # result = trained_model.evaluate(test_data, 8, [Loss()])
 
-        predmodel = Sequential().add(trained_model).add(JoinTable(2, 2))
-        result = predmodel.predict(test_data)
-        print("Result",result.take(5))
-        print("Result", result)
+        # predmodel = Sequential().add(model).add(JoinTable(2, 2))
+        # result = predmodel.predict(train_data)
+        # print("Result",result.take(1))
+        # print("Result", result)
 
     def generate_corrupted_triplets(self, type = "train", cycle_index=1):
         count = 0
@@ -270,7 +275,7 @@ class TransE:
             if count == 0:
                 start_time = time.time()
             count += 1
-            print("Batch number:", count)
+            # print("Batch number:", count)
             Sbatch = self.test_triples
             # Sbatch=self.
 
@@ -301,47 +306,38 @@ class TransE:
 
                         else:
                             continue
-                    # batch_neg_head_replaced[(head, tail, relation)] = list_head_replace
-                    # batch_neg_tail_replaced[(head, tail, relation)] = list_tail_replace
-                    # list_tail_replace = []
-                    # list_head_replace = []
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
-    conf=SparkConf().setAppName('test').setMaster('spark://Heena:7077')
+    conf=SparkConf().setAppName('test').setMaster('local[*]')
     sc = SparkContext.getOrCreate(conf)
     entities = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/entity2id.txt", header=None)
-    dict_entities = dict(zip(entities[0], entities[1]))
+    dict_entities = dict(zip(entities[0], entities[1]+1))
     print(len(entities))
     relations = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/relation2id.txt", header=None)
-    dict_relations = dict(zip(relations[0], relations[1]))
+    dict_relations = dict(zip(relations[0], relations[1]+1))
     print(len(relations))
-    training_df = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/train.txt", header=None)
+    training_df = pd.read_table("/home/heena/Downloads/Zinjhao/TransE-master/TransE-master/data/FB15k/train.txt", header=None)
     validation_df = pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/valid.txt", header=None)
     test_df=pd.read_table("/home/heena/Documents/Distributed-Big-Data-Lab-Project/data/FB15k/test.txt", header=None)
 
-    training_triples = list(zip([dict_entities[h] + 1 for h in training_df[0]],
-                                 [dict_entities[t] + 1 for t in training_df[1]],
-                                  [dict_relations[r]+len(entities) + 1 for r in training_df[2]]))
-    validation_triples = list(zip([dict_entities[h] + 1 for h in validation_df[0]],
-                                [dict_entities[t] + 1 for t in validation_df[1]],
-                                [dict_relations[r] + len(entities) + 1 for r in validation_df[2]]))
-    testing_triples=list(zip([dict_entities[h] + 1 for h in test_df[0]],
-                                [dict_entities[t] + 1 for t in test_df[1]],
-                                [dict_relations[r] + len(entities) + 1 for r in test_df[2]]))
+    training_triples = list(zip([dict_entities[h] for h in training_df[0]],
+                                 [dict_entities[t]for t in training_df[1]],
+                                  [dict_relations[r]+len(entities) for r in training_df[2]]))
+    validation_triples = list(zip([dict_entities[h] for h in validation_df[0]],
+                                [dict_entities[t] for t in validation_df[1]],
+                                [dict_relations[r] + len(entities) for r in validation_df[2]]))
+    testing_triples=list(zip([dict_entities[h] for h in test_df[0]],
+                                [dict_entities[t] for t in test_df[1]],
+                                [dict_relations[r] + len(entities) for r in test_df[2]]))
 
     transE = TransE(dict_entities, dict_relations, training_triples, validation_triples, testing_triples,margin=1, dim=50)
     transE.generate_corrupted_triplets(type="train")
-    transE.generate_corrupted_triplets(type="validation")
+    # transE.generate_corrupted_triplets(type="validation")
 
     transE.total_embeddings = len(entities)+len(relations)
-    #print("type",(no_entities_relations))
+    print("Total embeddings", transE.total_embeddings)
+    # print("type",(no_entities_relations))
 
     transE.make_samples(transE.total_embeddings)
 
