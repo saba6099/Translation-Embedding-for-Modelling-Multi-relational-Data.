@@ -1,5 +1,6 @@
 # Translation Embedding for modelling Multi-Relational Data
-
+For further details, please read [Project Report](https://github.com/saba6099/Distributed-Big-Data-Lab-Project/blob/master/Translation_Embedding_for_modelling_multi_relational_data.pdf)
+ 
 ## Pre-requisites
 Following packages must be installed:
 Pyspark 2.2.3
