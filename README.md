@@ -3,8 +3,11 @@ For further details, please read [Project Report](https://github.com/saba6099/Di
  
 ## Pre-requisites
 Following packages must be installed:
+
 [Pyspark 2.2.3](https://pypi.org/project/pyspark/)
+
 [BigDl 0.7](https://pypi.org/project/BigDL/)
+
 [Python 3.6](https://www.python.org/downloads/)
 
 ## Datasets used
@@ -20,10 +23,10 @@ Following packages must be installed:
 ## Project module description
 
 
-### Main method: code driver.
+###### Main method: code driver.
 	The file paths have to be changed in main method itself. It loads the data and calls other modules.
 
-### create_model: TransE score model.
+###### create_model: TransE score model.
 	This module calculates the scores of positive and corrupted triples of a training batch. It includes the embedding layer and other BigDL math layers that perform the operation.
 
 ### generate_training_corrupted_triplets: 
